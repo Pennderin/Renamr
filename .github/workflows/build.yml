@@ -26,9 +26,17 @@ jobs:
         run: npx electron-builder --win --publish never
 
       - name: Upload installer to release
+        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
           files: |
             dist/*.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifact (manual runs)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Renamr-Windows-Installer
+          path: dist/*.exe
