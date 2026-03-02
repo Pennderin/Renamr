@@ -1,16 +1,32 @@
-MIT License
+MIT License — with Commons Clause
 
 Copyright (c) 2025 Renamr
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+of this software and associated documentation files (the "Software"), to use
+the Software for personal, educational, or internal business purposes,
+subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. The above copyright notice and this permission notice shall be included
+   in all copies or substantial portions of the Software.
+
+2. You MAY:
+   - Use the Software free of charge for any personal or commercial purpose.
+   - Modify the Software for your own private use.
+   - Submit bug reports, suggestions, or pull requests to the original project.
+
+3. You MAY NOT:
+   - Sell, sublicense, or charge fees for access to the Software or any
+     derivative work based on it.
+   - Redistribute, republish, or host copies of the Software (modified or
+     unmodified) as your own product or under a different name.
+   - Claim authorship or ownership of the Software or any substantial
+     portion thereof.
+   - Remove or alter this license, copyright notice, or attribution.
+
+"Derivative work" means any software that is substantially based on or
+incorporates a significant portion of the original Software's source code,
+design, or functionality.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
