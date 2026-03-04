@@ -421,8 +421,51 @@ input, button { font-family: inherit; font-size: inherit; }
   border-bottom: 1px solid transparent;
 }
 
-/* Make the arrows container stack properly */
+/* Organize page: action bar above the three columns */
+#organize-panels {
+  flex-direction: column;
+}
+.organize-action-bar {
+  display: flex;
+  align-items: center;
+  padding: 6px 16px;
+  gap: 8px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.organize-action-label { flex: 1; }
+.organize-action-center { display: flex; gap: 6px; align-items: center; }
+.organize-action-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.organize-action-right .panel-label { margin-right: auto; }
+
+/* Three-column body below the action bar */
+.organize-panels-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Slim arrows column — no buttons, just arrows */
+.panel-arrows {
+  width: 68px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--border-subtle);
+}
+
+/* Make the arrows container fill the arrows column and scroll in sync */
 #organize-arrows-container {
+  flex: 1;
   display: flex;
   flex-direction: column;
   overflow-x: hidden;

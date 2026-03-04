@@ -83,127 +83,143 @@
             </div>
           </div>
           <div class="workspace-panels hidden" id="organize-panels">
-            <div class="panel panel-left">
-              <div class="panel-header"><span class="panel-label">Original Files</span></div>
-              <div class="panel-list" id="organize-original-list">
 
-                <!-- Movies section -->
-                <div class="type-section" id="org-movies-section" style="display:none">
-                  <div class="type-section-header">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 2v20M17 2v20M2 12h20"/></svg>
-                    <span>Movies</span>
-                    <span class="type-section-count" id="org-movies-count"></span>
+            <!-- Action bar shared across all three columns -->
+            <div class="organize-action-bar">
+              <span class="panel-label organize-action-label">Original Files</span>
+              <div class="organize-action-center">
+                <div class="match-btn-wrapper">
+                  <button class="center-action-btn" onclick="Organize.matchAll()" oncontextmenu="Organize.showMatchMenu(event)" title="Left-click: Match all&#10;Right-click: Choose source">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <span>Match</span>
+                  </button>
+                  <div class="source-menu hidden" id="organize-source-menu">
+                    <div class="source-menu-group" id="org-match-movies-group" style="display:none">
+                      <div class="source-menu-label">Movies</div>
+                      <div class="source-menu-item" onclick="Organize.matchType('movies','tmdb'); hideSourceMenus();"><span class="source-dot" style="background:#01b4e4"></span> TMDB</div>
+                      <div class="source-menu-item" onclick="Organize.matchType('movies','omdb'); hideSourceMenus();"><span class="source-dot" style="background:#f5c518"></span> OMDb</div>
+                    </div>
+                    <div class="source-menu-group" id="org-match-tv-group" style="display:none">
+                      <div class="source-menu-label">TV Shows</div>
+                      <div class="source-menu-item" onclick="Organize.matchType('tv','tmdb'); hideSourceMenus();"><span class="source-dot" style="background:#01b4e4"></span> TMDB</div>
+                      <div class="source-menu-item" onclick="Organize.matchType('tv','tvmaze'); hideSourceMenus();"><span class="source-dot" style="background:#3c948b"></span> TVmaze</div>
+                    </div>
+                    <div class="source-menu-group" id="org-match-audiobooks-group" style="display:none">
+                      <div class="source-menu-label">Audiobooks</div>
+                      <div class="source-menu-item" onclick="Organize.matchType('audiobooks','audible'); hideSourceMenus();"><span class="source-badge" style="background:#f90">Audible</span> Audible</div>
+                      <div class="source-menu-item" onclick="Organize.matchType('audiobooks','google'); hideSourceMenus();"><span class="source-badge" style="background:#4285f4">Google</span> Google Books</div>
+                    </div>
+                    <div class="source-menu-group" id="org-match-roms-group" style="display:none">
+                      <div class="source-menu-label">ROMs</div>
+                      <div class="source-menu-item" onclick="Organize.matchType('roms','igdb'); hideSourceMenus();"><span class="source-dot" style="background:#6a4c93"></span> IGDB</div>
+                    </div>
+                    <div class="source-menu-sep"></div>
+                    <div class="source-menu-item" onclick="Organize.matchAll('all'); hideSourceMenus();"><span class="source-dot" style="background:#888"></span> All Sources</div>
                   </div>
-                  <div id="movies-original-list"></div>
                 </div>
-
-                <!-- TV section -->
-                <div class="type-section" id="org-tv-section" style="display:none">
-                  <div class="type-section-header">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
-                    <span>TV Shows</span>
-                    <span class="type-section-count" id="org-tv-count"></span>
-                  </div>
-                  <div id="tv-original-list"></div>
-                </div>
-
-                <!-- Audiobooks section -->
-                <div class="type-section" id="org-audiobooks-section" style="display:none">
-                  <div class="type-section-header">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                    <span>Audiobooks</span>
-                    <span class="type-section-count" id="org-audiobooks-count"></span>
-                  </div>
-                  <div id="audiobooks-original-list"></div>
-                </div>
-
-                <!-- ROMs section -->
-                <div class="type-section" id="org-roms-section" style="display:none">
-                  <div class="type-section-header">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="12" rx="4"/><path d="M7 11v4M5 13h4" stroke-linecap="round"/><circle cx="16" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"/></svg>
-                    <span>ROMs</span>
-                    <span class="type-section-count" id="org-roms-count"></span>
-                  </div>
-                  <div id="roms-original-list"></div>
-                </div>
-
-              </div>
-            </div>
-            <div class="panel-center">
-              <div class="match-btn-wrapper">
-                <button class="center-action-btn" onclick="Organize.matchAll()" oncontextmenu="Organize.showMatchMenu(event)" title="Left-click: Match all&#10;Right-click: Choose source">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                  <span>Match</span>
+                <button class="center-action-btn" onclick="Organize.refresh()" title="Clear matches, keep files">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                  <span>Refresh</span>
                 </button>
-                <div class="source-menu hidden" id="organize-source-menu">
-                  <div class="source-menu-group" id="org-match-movies-group" style="display:none">
-                    <div class="source-menu-label">Movies</div>
-                    <div class="source-menu-item" onclick="Organize.matchType('movies','tmdb'); hideSourceMenus();"><span class="source-dot" style="background:#01b4e4"></span> TMDB</div>
-                    <div class="source-menu-item" onclick="Organize.matchType('movies','omdb'); hideSourceMenus();"><span class="source-dot" style="background:#f5c518"></span> OMDb</div>
-                  </div>
-                  <div class="source-menu-group" id="org-match-tv-group" style="display:none">
-                    <div class="source-menu-label">TV Shows</div>
-                    <div class="source-menu-item" onclick="Organize.matchType('tv','tmdb'); hideSourceMenus();"><span class="source-dot" style="background:#01b4e4"></span> TMDB</div>
-                    <div class="source-menu-item" onclick="Organize.matchType('tv','tvmaze'); hideSourceMenus();"><span class="source-dot" style="background:#3c948b"></span> TVmaze</div>
-                  </div>
-                  <div class="source-menu-group" id="org-match-audiobooks-group" style="display:none">
-                    <div class="source-menu-label">Audiobooks</div>
-                    <div class="source-menu-item" onclick="Organize.matchType('audiobooks','audible'); hideSourceMenus();"><span class="source-badge" style="background:#f90">Audible</span> Audible</div>
-                    <div class="source-menu-item" onclick="Organize.matchType('audiobooks','google'); hideSourceMenus();"><span class="source-badge" style="background:#4285f4">Google</span> Google Books</div>
-                  </div>
-                  <div class="source-menu-group" id="org-match-roms-group" style="display:none">
-                    <div class="source-menu-label">ROMs</div>
-                    <div class="source-menu-item" onclick="Organize.matchType('roms','igdb'); hideSourceMenus();"><span class="source-dot" style="background:#6a4c93"></span> IGDB</div>
-                  </div>
-                  <div class="source-menu-sep"></div>
-                  <div class="source-menu-item" onclick="Organize.matchAll('all'); hideSourceMenus();"><span class="source-dot" style="background:#888"></span> All Sources</div>
-                </div>
               </div>
-              <button class="center-action-btn" onclick="Organize.refresh()" title="Clear matches, keep files">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-                <span>Refresh</span>
-              </button>
-              <div class="center-arrows" id="organize-arrows-container">
-                <div id="movies-arrows"></div>
-                <div id="tv-arrows"></div>
-                <div id="audiobooks-arrows"></div>
-                <div id="roms-arrows"></div>
-              </div>
-              <button class="center-action-btn accent" onclick="Organize.renameAll()" id="organize-rename-btn" disabled>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 15 2 2 4-4"/><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>
-                <span>Rename</span>
-              </button>
-              <button class="center-action-btn" onclick="Audiobooks.embedAllTags()" id="audiobooks-embed-btn" title="Write metadata into audio files for Plex" style="display:none">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                <span>Embed Tags</span>
-              </button>
-            </div>
-            <div class="panel panel-right">
-              <div class="panel-header"><span class="panel-label">New Names</span></div>
-              <div class="panel-list" id="organize-new-list">
-
-                <div class="type-section" id="org-movies-section-r" style="display:none">
-                  <div class="type-section-header"><span>Movies</span></div>
-                  <div id="movies-new-list"></div>
-                </div>
-
-                <div class="type-section" id="org-tv-section-r" style="display:none">
-                  <div class="type-section-header"><span>TV Shows</span></div>
-                  <div id="tv-new-list"></div>
-                </div>
-
-                <div class="type-section" id="org-audiobooks-section-r" style="display:none">
-                  <div class="type-section-header"><span>Audiobooks</span></div>
-                  <div id="audiobooks-new-list"></div>
-                </div>
-
-                <div class="type-section" id="org-roms-section-r" style="display:none">
-                  <div class="type-section-header"><span>ROMs</span></div>
-                  <div id="roms-new-list"></div>
-                </div>
-
+              <div class="organize-action-right">
+                <span class="panel-label">New Names</span>
+                <button class="center-action-btn accent" onclick="Organize.renameAll()" id="organize-rename-btn" disabled>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 15 2 2 4-4"/><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>
+                  <span>Rename</span>
+                </button>
+                <button class="center-action-btn" onclick="Audiobooks.embedAllTags()" id="audiobooks-embed-btn" title="Write metadata into audio files for Plex" style="display:none">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                  <span>Embed Tags</span>
+                </button>
               </div>
             </div>
+
+            <!-- Three columns — all start at the same vertical position -->
+            <div class="organize-panels-body">
+              <div class="panel panel-left">
+                <div class="panel-list" id="organize-original-list">
+
+                  <!-- Movies section -->
+                  <div class="type-section" id="org-movies-section" style="display:none">
+                    <div class="type-section-header">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 2v20M17 2v20M2 12h20"/></svg>
+                      <span>Movies</span>
+                      <span class="type-section-count" id="org-movies-count"></span>
+                    </div>
+                    <div id="movies-original-list"></div>
+                  </div>
+
+                  <!-- TV section -->
+                  <div class="type-section" id="org-tv-section" style="display:none">
+                    <div class="type-section-header">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
+                      <span>TV Shows</span>
+                      <span class="type-section-count" id="org-tv-count"></span>
+                    </div>
+                    <div id="tv-original-list"></div>
+                  </div>
+
+                  <!-- Audiobooks section -->
+                  <div class="type-section" id="org-audiobooks-section" style="display:none">
+                    <div class="type-section-header">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                      <span>Audiobooks</span>
+                      <span class="type-section-count" id="org-audiobooks-count"></span>
+                    </div>
+                    <div id="audiobooks-original-list"></div>
+                  </div>
+
+                  <!-- ROMs section -->
+                  <div class="type-section" id="org-roms-section" style="display:none">
+                    <div class="type-section-header">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="12" rx="4"/><path d="M7 11v4M5 13h4" stroke-linecap="round"/><circle cx="16" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"/></svg>
+                      <span>ROMs</span>
+                      <span class="type-section-count" id="org-roms-count"></span>
+                    </div>
+                    <div id="roms-original-list"></div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Arrows column (no buttons — starts flush with file rows) -->
+              <div class="panel-arrows">
+                <div class="center-arrows" id="organize-arrows-container">
+                  <div id="movies-arrows"></div>
+                  <div id="tv-arrows"></div>
+                  <div id="audiobooks-arrows"></div>
+                  <div id="roms-arrows"></div>
+                </div>
+              </div>
+
+              <div class="panel panel-right">
+                <div class="panel-list" id="organize-new-list">
+
+                  <div class="type-section" id="org-movies-section-r" style="display:none">
+                    <div class="type-section-header"><span>Movies</span></div>
+                    <div id="movies-new-list"></div>
+                  </div>
+
+                  <div class="type-section" id="org-tv-section-r" style="display:none">
+                    <div class="type-section-header"><span>TV Shows</span></div>
+                    <div id="tv-new-list"></div>
+                  </div>
+
+                  <div class="type-section" id="org-audiobooks-section-r" style="display:none">
+                    <div class="type-section-header"><span>Audiobooks</span></div>
+                    <div id="audiobooks-new-list"></div>
+                  </div>
+
+                  <div class="type-section" id="org-roms-section-r" style="display:none">
+                    <div class="type-section-header"><span>ROMs</span></div>
+                    <div id="roms-new-list"></div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
