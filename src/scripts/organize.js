@@ -59,7 +59,7 @@ const Organize = {
 
   // ── Add Folder (dialog) ──────────────────────────────────────
   async addFolder() {
-    const dir = await api.openFolder();
+    const dir = await api.openDirectory();
     if (!dir) return;
     const scanned = await api.scanFiles(dir, 'all');
     if (scanned && scanned.length > 0) {
