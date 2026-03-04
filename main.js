@@ -16,9 +16,16 @@ const store = new Store({
     defaultMovieFormat: '{title} ({year})/{title} ({year})',
     defaultTvFormat: '{series}/Season {season}/{series} - S{season}E{episode} - {title}',
     defaultAudiobookFormat: '{author}/{title}/{title} - Chapter {track}',
+    defaultRomFormat: '{platform}/{title} ({year})',
     outputDirectory: '',
     theme: 'dark',
-    history: []
+    history: [],
+    igdbClientId: '',
+    igdbClientSecret: '',
+    igdbAccessToken: '',
+    igdbTokenExpiry: 0,
+    romArticleFolder: false,
+    romArticleFile: false
   }
 });
 
@@ -82,10 +89,16 @@ ipcMain.handle('files:isDirectory', async (_, filePath) => {
 
 // ── File Scanner ─────────────────────────────────────────────────
 ipcMain.handle('files:scan', async (_, dirPath, mediaType) => {
+  const ROM_EXTS = ['nes','snes','n64','z64','v64','gba','gbc','gb','nds','3ds',
+    'iso','cso','chd','rvz','gcz','wbfs','wad','cia','xci','nsp','pce',
+    'md','smd','gen','gg','32x','sfc','smc','fig','bs','st',
+    'a26','a52','a78','lnx','ngp','ngc','ws','wsc','psx','pbp',
+    'cdi','nrg','img','bin','cue'];
   const extensions = {
     video: ['mkv','mp4','avi','mov','wmv','flv','m4v','webm','ts'],
     audio: ['mp3','m4a','m4b','flac','ogg','wma','aac','opus','wav'],
-    all: ['mkv','mp4','avi','mov','wmv','flv','m4v','webm','ts','mp3','m4a','m4b','flac','ogg','wma','aac','opus','wav']
+    roms: ROM_EXTS,
+    all: ['mkv','mp4','avi','mov','wmv','flv','m4v','webm','ts','mp3','m4a','m4b','flac','ogg','wma','aac','opus','wav', ...ROM_EXTS]
   };
 
   const exts = extensions[mediaType] || extensions.all;
@@ -353,6 +366,96 @@ ipcMain.handle('omdb:details', async (_, imdbId, apiKey) => {
     };
   } catch (err) {
     return null;
+  }
+});
+
+// ── IGDB (Games / ROMs) ─────────────────────────────────────────
+async function _getIgdbToken() {
+  const clientId     = store.get('igdbClientId');
+  const clientSecret = store.get('igdbClientSecret');
+  if (!clientId || !clientSecret) throw new Error('No IGDB credentials configured');
+
+  const cachedToken  = store.get('igdbAccessToken');
+  const cachedExpiry = store.get('igdbTokenExpiry', 0);
+  if (cachedToken && cachedExpiry > Date.now() + 60000) return cachedToken;
+
+  const res = await axios.post('https://id.twitch.tv/oauth2/token', null, {
+    params: { client_id: clientId, client_secret: clientSecret, grant_type: 'client_credentials' }
+  });
+  const token  = res.data.access_token;
+  const expiry = Date.now() + (res.data.expires_in * 1000);
+  store.set('igdbAccessToken', token);
+  store.set('igdbTokenExpiry', expiry);
+  return token;
+}
+
+ipcMain.handle('igdb:search', async (_, query, platformId) => {
+  try {
+    const clientId = store.get('igdbClientId');
+    const token    = await _getIgdbToken();
+
+    let body = `search "${query.replace(/"/g, '')}";\n`;
+    body    += `fields name,first_release_date,platforms.name,platforms.abbreviation,genres.name,involved_companies.company.name,involved_companies.developer,cover.url;\n`;
+    body    += `limit 10;\n`;
+    if (platformId) body += `where platforms = (${platformId});\n`;
+
+    const res = await axios.post('https://api.igdb.com/v4/games', body, {
+      headers: {
+        'Client-ID': clientId,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'text/plain'
+      },
+      timeout: 10000
+    });
+
+    const items = Array.isArray(res.data) ? res.data : [];
+    return items.map(item => {
+      const releaseYear  = item.first_release_date
+        ? new Date(item.first_release_date * 1000).getFullYear().toString()
+        : '';
+      const platforms    = item.platforms || [];
+      const firstPlat    = platforms[0] || {};
+      const genre        = ((item.genres || [])[0] || {}).name || '';
+      const developers   = (item.involved_companies || [])
+        .filter(ic => ic.developer)
+        .map(ic => ic.company?.name)
+        .filter(Boolean);
+      const coverUrl     = item.cover?.url
+        ? 'https:' + item.cover.url.replace('t_thumb', 't_cover_big')
+        : null;
+      return {
+        id:             item.id,
+        title:          item.name || '',
+        year:           releaseYear,
+        platform:       firstPlat.name || '',
+        platformAbbrev: firstPlat.abbreviation || '',
+        platforms:      platforms.map(p => ({ id: p.id, name: p.name, abbrev: p.abbreviation })),
+        genre,
+        developer:      developers[0] || '',
+        coverUrl,
+        source:         'IGDB'
+      };
+    });
+  } catch (err) {
+    console.error('IGDB search error:', err.message);
+    return { error: err.message };
+  }
+});
+
+ipcMain.handle('igdb:testCredentials', async (_, clientId, clientSecret) => {
+  try {
+    const res = await axios.post('https://id.twitch.tv/oauth2/token', null, {
+      params: { client_id: clientId, client_secret: clientSecret, grant_type: 'client_credentials' }
+    });
+    const token  = res.data.access_token;
+    const expiry = Date.now() + (res.data.expires_in * 1000);
+    store.set('igdbClientId',     clientId);
+    store.set('igdbClientSecret', clientSecret);
+    store.set('igdbAccessToken',  token);
+    store.set('igdbTokenExpiry',  expiry);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
   }
 });
 

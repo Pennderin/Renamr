@@ -117,11 +117,20 @@ const FormatEngine = {
         chapterTitle: 'Bridge Four',
         narrator: 'Michael Kramer',
         genre: 'Fantasy'
+      },
+      rom: {
+        title: 'Super Mario World',
+        platform: 'Super Nintendo Entertainment System',
+        platformShort: 'SNES',
+        year: '1990',
+        genre: 'Platform',
+        developer: 'Nintendo',
+        region: 'USA'
       }
     };
 
     let result = this.apply(format, sampleData[type] || {});
-    const typeMap = { movie: 'movie', tv: 'tv', audiobook: 'audiobook' };
+    const typeMap = { movie: 'movie', tv: 'tv', audiobook: 'audiobook', rom: 'rom' };
     const prefix = typeMap[type] || 'movie';
     const articleFolder = await api.getStore(`${prefix}ArticleFolder`);
     const articleFile = await api.getStore(`${prefix}ArticleFile`);
@@ -172,6 +181,7 @@ const FormatEngine = {
   defaults: {
     movie: '{title} ({year})/{title} ({year})',
     tv: '{series}/Season {season}/{series} - S{season:2}E{episode:2} - {title}',
-    audiobook: '{author}/{series}/{series} - Book {bookNum} - {title}/Chapter {chapter:2}'
+    audiobook: '{author}/{series}/{series} - Book {bookNum} - {title}/Chapter {chapter:2}',
+    rom: '{platform}/{title} ({year})'
   }
 };

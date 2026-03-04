@@ -45,6 +45,10 @@ contextBridge.exposeInMainWorld('api', {
   downloadCover: (url) => ipcRenderer.invoke('books:downloadCover', url),
   cleanupCover: (coverPath) => ipcRenderer.invoke('books:cleanupCover', coverPath),
 
+  // IGDB (Games / ROMs)
+  igdbSearch: (query, platformId) => ipcRenderer.invoke('igdb:search', query, platformId),
+  igdbTestCredentials: (clientId, clientSecret) => ipcRenderer.invoke('igdb:testCredentials', clientId, clientSecret),
+
   // Settings store
   getStore: (key) => ipcRenderer.invoke('store:get', key),
   setStore: (key, val) => ipcRenderer.invoke('store:set', key, val),
