@@ -425,7 +425,12 @@ input, button { font-family: inherit; font-size: inherit; }
 #organize-arrows-container {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  scrollbar-width: none; /* Firefox */
+}
+#organize-arrows-container::-webkit-scrollbar {
+  display: none; /* Chrome / Electron */
 }
 
 /* File row with tags */
