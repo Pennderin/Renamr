@@ -5,6 +5,7 @@ const os = require('os');
 const { execFile } = require('child_process');
 const fastGlob = require('fast-glob');
 const axios = require('axios');
+const AdmZip = require('adm-zip');
 const Store = require('electron-store');
 
 const store = new Store({
@@ -77,6 +78,20 @@ ipcMain.handle('dialog:openFiles', async (_, filters) => {
   return result.canceled ? [] : result.filePaths;
 });
 
+// ── ZIP peek (read inner filenames without extracting) ───────────
+ipcMain.handle('files:peekZip', async (_, filePath) => {
+  try {
+    const zip = new AdmZip(filePath);
+    const entries = zip.getEntries();
+    // Return all inner entry names that aren't directories
+    return entries
+      .filter(e => !e.isDirectory)
+      .map(e => e.entryName.replace(/\\/g, '/').split('/').pop());
+  } catch {
+    return [];
+  }
+});
+
 // ── Path helpers ─────────────────────────────────────────────────
 ipcMain.handle('files:isDirectory', async (_, filePath) => {
   try {
@@ -93,7 +108,7 @@ ipcMain.handle('files:scan', async (_, dirPath, mediaType) => {
     'iso','cso','chd','rvz','gcz','wbfs','wad','cia','cci','xci','nsp','nsz','pce',
     'md','smd','gen','gg','32x','sfc','smc','fig','bs','st',
     'a26','a52','a78','lnx','ngp','ngc','ws','wsc','psx','pbp',
-    'cdi','nrg','img','bin','cue'];
+    'cdi','nrg','img','bin','cue','zip'];
   const extensions = {
     video: ['mkv','mp4','avi','mov','wmv','flv','m4v','webm','ts'],
     audio: ['mp3','m4a','m4b','flac','ogg','wma','aac','opus','wav'],

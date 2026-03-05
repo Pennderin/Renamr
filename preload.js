@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('api', {
 
   // File operations
   isDirectory: (path) => ipcRenderer.invoke('files:isDirectory', path),
+  peekZip: (path) => ipcRenderer.invoke('files:peekZip', path),
   scanFiles: (dir, type) => ipcRenderer.invoke('files:scan', dir, type),
   readAudioMeta: (path) => ipcRenderer.invoke('files:readAudioMeta', path),
   parseFilename: (filename) => ipcRenderer.invoke('files:parseFilename', filename),

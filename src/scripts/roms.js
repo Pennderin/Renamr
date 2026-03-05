@@ -208,7 +208,7 @@ const Roms = {
   async addFiles() {
     const paths = await api.openFiles([{
       name: 'All Media & ROM Files',
-      extensions: [...['mkv','mp4','avi','mov','wmv','flv','m4v','webm','ts','mpg','mpeg','mp3','m4a','m4b','flac','ogg','wma','aac','opus','wav'], ...Object.keys(ROM_PLATFORM_MAP)]
+      extensions: [...['mkv','mp4','avi','mov','wmv','flv','m4v','webm','ts','mpg','mpeg','mp3','m4a','m4b','flac','ogg','wma','aac','opus','wav'], ...Object.keys(ROM_PLATFORM_MAP), 'zip']
     }, {
       name: 'All Files',
       extensions: ['*']
@@ -233,9 +233,23 @@ const Roms = {
     let added = 0;
     for (const p of paths) {
       if (this.files.some(f => f.path === p)) continue;
-      const name    = pathBasename(p);
-      const ext     = getExtension(name).toLowerCase();
-      if (!ROM_EXTS.has(ext)) continue;
+      let name = pathBasename(p);
+      let ext  = getExtension(name).toLowerCase();
+
+      // For .zip files, peek inside to find the inner ROM extension and filename
+      if (ext === '.zip') {
+        const innerFiles = await api.peekZip(p);
+        const romEntry = innerFiles.find(f => {
+          const innerExt = getExtension(f).toLowerCase();
+          return ROM_EXTS.has(innerExt) && innerExt !== '.zip';
+        });
+        if (!romEntry) continue; // not a ROM zip, skip
+        // Use inner filename for title parsing and platform detection, but keep .zip as the actual ext
+        name = romEntry;
+        ext  = getExtension(romEntry).toLowerCase();
+      } else if (!ROM_EXTS.has(ext)) {
+        continue;
+      }
 
       const extKey      = ext.slice(1);
       const platformInfo = ROM_PLATFORM_MAP[extKey] || {
@@ -243,8 +257,9 @@ const Roms = {
       };
       const { cleanTitle, region, revision, disc, contentType, version } = parseRomFilename(name);
 
+      const zipExt = pathBasename(p).toLowerCase().endsWith('.zip') ? '.zip' : null;
       this.files.push({
-        path: p, name, ext,
+        path: p, name, ext: zipExt || ext,
         dir: pathDirname(p),
         cleanTitle,
         region,

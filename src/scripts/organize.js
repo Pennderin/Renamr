@@ -9,7 +9,7 @@ const ORG_ROM_EXTS = new Set(['.nes','.snes','.n64','.z64','.v64','.gba','.gbc',
   '.iso','.cso','.chd','.rvz','.gcz','.wbfs','.wad','.cia','.cci','.xci','.nsp','.nsz','.pce',
   '.md','.smd','.gen','.gg','.32x','.sfc','.smc','.fig','.bs','.st',
   '.a26','.a52','.a78','.lnx','.ngp','.ngc','.ws','.wsc','.psx','.pbp',
-  '.cdi','.nrg','.img','.bin','.cue']);
+  '.cdi','.nrg','.img','.bin','.cue','.zip']);
 const TV_PATTERNS = [
   /[Ss]\d{1,2}[Ee]\d{1,3}/,         // S01E01
   /\b\d{1,2}x\d{2,3}\b/,            // 1x01
@@ -50,7 +50,7 @@ const Organize = {
   // ── Add Files (dialog) ───────────────────────────────────────
   async addFiles() {
     const paths = await api.openFiles([
-      { name: 'All Media & ROM Files', extensions: ['mkv','mp4','avi','mov','wmv','flv','m4v','webm','ts','mpg','mpeg','mp3','m4a','m4b','flac','ogg','wma','aac','opus','wav','nes','snes','n64','z64','v64','gba','gbc','gb','nds','3ds','iso','cso','chd','rvz','gcz','wbfs','wad','cia','cci','xci','nsp','nsz','pce','md','smd','gen','gg','32x','sfc','smc','fig','a26','a52','a78','lnx','ngp','ngc','ws','wsc','psx','pbp','cdi','nrg','img','bin','cue'] },
+      { name: 'All Media & ROM Files', extensions: ['mkv','mp4','avi','mov','wmv','flv','m4v','webm','ts','mpg','mpeg','mp3','m4a','m4b','flac','ogg','wma','aac','opus','wav','nes','snes','n64','z64','v64','gba','gbc','gb','nds','3ds','iso','cso','chd','rvz','gcz','wbfs','wad','cia','cci','xci','nsp','nsz','pce','md','smd','gen','gg','32x','sfc','smc','fig','a26','a52','a78','lnx','ngp','ngc','ws','wsc','psx','pbp','cdi','nrg','img','bin','cue','zip'] },
       { name: 'All Files', extensions: ['*'] }
     ]);
     if (!paths || paths.length === 0) return;
