@@ -395,7 +395,7 @@ ipcMain.handle('igdb:search', async (_, query, platformId) => {
     const token    = await _getIgdbToken();
 
     let body = `search "${query.replace(/"/g, '')}";\n`;
-    body    += `fields name,first_release_date,platforms.name,platforms.abbreviation,genres.name,involved_companies.company.name,involved_companies.developer,cover.url;\n`;
+    body    += `fields name,first_release_date,category,platforms.name,platforms.abbreviation,genres.name,involved_companies.company.name,involved_companies.developer,cover.url;\n`;
     body    += `limit 10;\n`;
     if (platformId) body += `where platforms = (${platformId});\n`;
 
@@ -433,6 +433,7 @@ ipcMain.handle('igdb:search', async (_, query, platformId) => {
         genre,
         developer:      developers[0] || '',
         coverUrl,
+        category:       item.category || 0,
         source:         'IGDB'
       };
     });
@@ -456,6 +457,30 @@ ipcMain.handle('igdb:testCredentials', async (_, clientId, clientSecret) => {
     return { success: true };
   } catch (err) {
     return { success: false, error: err.message };
+  }
+});
+
+// ── Internet Archive (free ROM search, no API key) ───────────────
+ipcMain.handle('ia:search', async (_, query, platformShort) => {
+  try {
+    const encodedQuery = encodeURIComponent(`title:"${query}" AND mediatype:software`);
+    const url = `https://archive.org/advancedsearch.php?q=${encodedQuery}&fl=identifier,title,year,subject,creator&rows=15&output=json`;
+    const res = await axios.get(url, { timeout: 12000 });
+    const docs = res.data?.response?.docs || [];
+    return docs.map(doc => ({
+      id:             doc.identifier || '',
+      title:          doc.title      || '',
+      year:           doc.year       ? String(doc.year) : '',
+      platform:       Array.isArray(doc.subject) ? doc.subject[0] : (doc.subject || ''),
+      platformAbbrev: platformShort  || '',
+      genre:          '',
+      developer:      Array.isArray(doc.creator) ? doc.creator[0] : (doc.creator || ''),
+      coverUrl:       null,
+      source:         'IA'
+    }));
+  } catch (err) {
+    console.error('IA search error:', err.message);
+    return { error: err.message };
   }
 });
 

@@ -49,6 +49,9 @@ contextBridge.exposeInMainWorld('api', {
   igdbSearch: (query, platformId) => ipcRenderer.invoke('igdb:search', query, platformId),
   igdbTestCredentials: (clientId, clientSecret) => ipcRenderer.invoke('igdb:testCredentials', clientId, clientSecret),
 
+  // Internet Archive (free ROM search, no API key)
+  iaSearch: (query, platformShort) => ipcRenderer.invoke('ia:search', query, platformShort),
+
   // Settings store
   getStore: (key) => ipcRenderer.invoke('store:get', key),
   setStore: (key, val) => ipcRenderer.invoke('store:set', key, val),

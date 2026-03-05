@@ -970,7 +970,7 @@ const Audiobooks = {
 
     // Render book-grouped view
     let leftHtml = '';
-    let arrowHtml = '';
+    let arrowHtml = '<div class="arrow-spacer">&nbsp;</div>';
     let rightHtml = '';
 
     for (let bi = 0; bi < this.books.length; bi++) {
@@ -996,7 +996,7 @@ const Audiobooks = {
 
       // Book header arrow
       const bookArrowCls = book.matched ? (book.files.every(f => f.status === 'done') ? 'done' : 'active') : '';
-      arrowHtml += `<div class="center-arrow-row ${bookArrowCls}" style="font-weight:bold;">→</div>`;
+      arrowHtml += `<div class="center-arrow-row ${bookArrowCls}" style="font-weight:bold;height:44px;">→</div>`;
 
       // Book header (right side) — show target folder structure
       if (book.matched && book.files[0]?.newName) {

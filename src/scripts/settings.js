@@ -44,6 +44,9 @@ const Settings = {
       if (folderEl) folderEl.checked = folderVal;
       if (fileEl) fileEl.checked = fileVal;
     }
+
+    const esDeEl = document.getElementById('settings-rom-esde');
+    if (esDeEl) esDeEl.checked = await api.getStore('romEsDeNames') || false;
   },
 
   async saveApiKey(provider) {
@@ -151,6 +154,13 @@ const Settings = {
     document.getElementById('settings-output-dir').value = '';
     await api.setStore('outputDirectory', '');
     showToast('Output directory cleared — files will be renamed in place', 'info');
+  },
+
+  async saveRomEsDeNames() {
+    const checked = document.getElementById('settings-rom-esde')?.checked || false;
+    await api.setStore('romEsDeNames', checked);
+    if (typeof Roms !== 'undefined') Roms.reapplyFormat();
+    showToast(checked ? 'ES-DE system names enabled' : 'Standard system names restored', 'info');
   },
 
   async saveArticleSuffix(type) {

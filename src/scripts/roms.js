@@ -58,6 +58,39 @@ const ROM_PLATFORM_MAP = {
 
 const ROM_EXTS = new Set(Object.keys(ROM_PLATFORM_MAP).map(e => '.' + e));
 
+// ── ES-DE system folder name map ──────────────────────────────────
+// Maps platform short name → ES-DE Frontend folder name
+const ES_DE_SYSTEM_MAP = {
+  'NES':     'nes',
+  'SNES':    'snes',
+  'N64':     'n64',
+  'GB':      'gb',
+  'GBC':     'gbc',
+  'GBA':     'gba',
+  'NDS':     'nds',
+  '3DS':     'n3ds',
+  'Wii':     'wii',
+  'GC':      'gc',
+  'Switch':  'switch',
+  'PS1':     'psx',
+  'PS2':     'ps2',
+  'PSP':     'psp',
+  'Genesis': 'genesis',
+  'GG':      'gamegear',
+  '32X':     'sega32x',
+  'PCE':     'pcengine',
+  'A2600':   'atari2600',
+  'A5200':   'atari5200',
+  'A7800':   'atari7800',
+  'Lynx':    'atarilynx',
+  'NGP':     'ngp',
+  'NGPC':    'ngpc',
+  'WS':      'wonderswan',
+  'WSC':     'wonderswancolor',
+  'Arcade':  'arcade',
+  'DC':      'dreamcast',
+};
+
 // ── No-Intro filename parser ──────────────────────────────────────
 function parseRomFilename(filename) {
   // Strip extension
@@ -66,14 +99,17 @@ function parseRomFilename(filename) {
   // Collect all parenthetical and bracket groups
   const allParens = [];
   base.replace(/\(([^)]+)\)/g, (_, c) => { allParens.push(c); return ''; });
+  const allBrackets = [];
+  base.replace(/\[([^\]]+)\]/g, (_, c) => { allBrackets.push(c); return ''; });
 
   const REGIONS = ['USA','US','Europe','EUR','Japan','JPN','JP','World',
     'Australia','Korea','China','Germany','France','Spain','Italy',
     'Brazil','Netherlands','Sweden','Russia','Poland','Taiwan','Asia'];
   const REGION_NORM = { US: 'USA', EUR: 'Europe', JPN: 'Japan', JP: 'Japan' };
 
+  // Region: check parens first, then brackets (Switch uses [US], [EUR], etc.)
   let region = '';
-  for (const p of allParens) {
+  for (const p of [...allParens, ...allBrackets]) {
     const parts = p.split(',').map(s => s.trim());
     if (parts.some(r => REGIONS.includes(r))) { region = p.trim(); break; }
   }
@@ -84,14 +120,69 @@ function parseRomFilename(filename) {
     if (/^Rev\s+/i.test(p) || /^v\d/i.test(p)) { revision = p.trim(); break; }
   }
 
+  // ── Disc detection ────────────────────────────────────────────
+  let disc = null;
+  for (const p of allParens) {
+    const m = p.match(/^Dis[ck]\s*(\d)$/i);
+    if (m) { disc = 'Disc ' + m[1]; break; }
+  }
+
+  // ── Content type + version detection ─────────────────────────
+  let contentType = 'game';
+  let version = '';
+
+  // Switch TitleID: 16-char hex string in brackets
+  // Last 3 hex digits: 000 = base game, 800 = update, else = DLC
+  for (const b of allBrackets) {
+    if (/^[0-9A-Fa-f]{16}$/.test(b.trim())) {
+      const lastByte = parseInt(b.trim().slice(-3), 16);
+      if (lastByte === 0x800) { contentType = 'update'; }
+      else if (lastByte !== 0) { contentType = 'dlc'; }
+      break; // Only one TitleID per filename
+    }
+  }
+
+  // Check brackets for explicit tags (these override TitleID detection)
+  for (const b of allBrackets) {
+    const bt = b.trim();
+    // v1.2.3 style OR v589824 Nintendo decimal — make dots optional
+    if (/^v\d+(\.\d+)*$/i.test(bt) && !version) { version = bt; continue; }
+    if (/^(Update|Patch|UPD)$/i.test(bt)) { contentType = 'update'; continue; }
+    if (/^(DLC|Add-On|AddOn|Content|Addon)$/i.test(bt)) { contentType = 'dlc'; continue; }
+  }
+
+  // Fall back to parens if not yet determined
+  if (contentType === 'game') {
+    for (const p of allParens) {
+      const pt = p.trim();
+      if (/^(Update|Patch)$/i.test(pt)) { contentType = 'update'; break; }
+      if (/^(DLC)$/i.test(pt)) { contentType = 'dlc'; break; }
+      if (/^v\d+(\.\d+)+$/i.test(pt) && !version) {
+        version = pt;
+        contentType = 'update';
+        break;
+      }
+    }
+  }
+
   // Strip ALL parenthetical/bracket groups from title
   let cleanTitle = base
     .replace(/\s*\([^)]*\)/g, '')
     .replace(/\s*\[[^\]]*\]/g, '')
-    .replace(/\s+/g, ' ')
     .trim();
 
-  return { cleanTitle, region, revision };
+  // Strip inline version from title body — e.g., "Kirby v1.1.0" → "Kirby"
+  // Prefer human-readable x.y.z format over Nintendo decimal bracket versions
+  const bodyVersion = cleanTitle.match(/\s+(v\d+(\.\d+)+)\s*$/i);
+  if (bodyVersion) {
+    version = bodyVersion[1]; // override bracket version with readable one
+    if (contentType === 'game') contentType = 'update'; // don't override an already-detected DLC tag
+    cleanTitle = cleanTitle.replace(bodyVersion[0], '').trim();
+  }
+
+  cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
+
+  return { cleanTitle, region, revision, disc, contentType, version };
 }
 
 // ── Helper: escape HTML ───────────────────────────────────────────
@@ -108,6 +199,8 @@ const Roms = {
   files: [],
   _searchResults: [],
   _dialogResolve: null,
+  _batchSource: 'igdb',
+  _ctxMenuIndex: -1,
 
   // ── File ingestion ──────────────────────────────────────────────
   async addFiles() {
@@ -146,7 +239,7 @@ const Roms = {
       const platformInfo = ROM_PLATFORM_MAP[extKey] || {
         name: 'Unknown Platform', short: extKey.toUpperCase(), igdbId: null
       };
-      const { cleanTitle, region, revision } = parseRomFilename(name);
+      const { cleanTitle, region, revision, disc, contentType, version } = parseRomFilename(name);
 
       this.files.push({
         path: p, name, ext,
@@ -154,6 +247,9 @@ const Roms = {
         cleanTitle,
         region,
         revision,
+        disc,
+        contentType,
+        version,
         platform: platformInfo,
         match: null,
         newName: '', newPath: '',
@@ -169,25 +265,36 @@ const Roms = {
   },
 
   // ── Matching ────────────────────────────────────────────────────
-  async matchAll() {
-    const clientId = await api.getStore('igdbClientId');
-    if (!clientId) {
-      showToast('Set IGDB credentials in Settings first', 'error');
-      return;
+  async matchAll(source) {
+    source = source || 'igdb';
+    this._batchSource = source;
+    if (source === 'igdb') {
+      const clientId = await api.getStore('igdbClientId');
+      if (!clientId) {
+        showToast('Set IGDB credentials in Settings first', 'error');
+        return;
+      }
     }
     for (const file of this.files) {
       if (file.match) continue;
-      await this._matchFile(file);
+      await this._matchFile(file, source);
     }
   },
 
-  async _matchFile(file) {
+  async _matchFile(file, source) {
+    source = source || this._batchSource || 'igdb';
     file.status = 'searching';
     this.render();
 
-    const query      = file.cleanTitle || getBaseName(file.name).replace(/\./g, ' ');
-    const platformId = file.platform?.igdbId || null;
-    const results    = await api.igdbSearch(query, platformId);
+    const query   = file.cleanTitle || getBaseName(file.name).replace(/\./g, ' ');
+    let results;
+
+    if (source === 'ia') {
+      results = await api.iaSearch(query, file.platform?.short);
+    } else {
+      const platformId = file.platform?.igdbId || null;
+      results = await api.igdbSearch(query, platformId);
+    }
 
     if (!results || results.error || results.length === 0) {
       file.status = 'error';
@@ -198,6 +305,7 @@ const Roms = {
     const uniqueTitles = [...new Set(results.map(r => r.title))];
     if (uniqueTitles.length === 1) {
       file.match  = results[0];
+      if (file.match.category === 1 && file.contentType === 'game') file.contentType = 'dlc';
       file.status = 'matched';
       await this.updateNewName(file);
       this.render();
@@ -206,6 +314,23 @@ const Roms = {
       this.render();
       await this._showSelectionDialog(this.files.indexOf(file), results, query);
     }
+  },
+
+  // ── Search helpers ──────────────────────────────────────────────
+  _platformOptions(currentIgdbId) {
+    const seen = new Set();
+    const platforms = [];
+    for (const p of Object.values(ROM_PLATFORM_MAP)) {
+      if (p.igdbId && !seen.has(p.igdbId)) {
+        seen.add(p.igdbId);
+        platforms.push(p);
+      }
+    }
+    platforms.sort((a, b) => a.name.localeCompare(b.name));
+    return `<option value="">All Platforms</option>` +
+      platforms.map(p =>
+        `<option value="${p.igdbId}" data-short="${escHtml(p.short)}"${p.igdbId === currentIgdbId ? ' selected' : ''}>${escHtml(p.name)}</option>`
+      ).join('');
   },
 
   // ── Search dialogs ──────────────────────────────────────────────
@@ -220,12 +345,14 @@ const Roms = {
         <div class="modal-search">
           <input type="text" class="input" id="rom-search-input"
                  value="${escHtml(query)}" placeholder="Search game title..." />
+          <select class="input" id="rom-search-platform" style="flex:0 0 auto;width:auto;max-width:200px;">
+            ${this._platformOptions(file.platform?.igdbId)}
+          </select>
           <button class="btn btn-primary" onclick="Roms.doSearch(${fileIndex})">Search</button>
           <button class="btn" onclick="Roms.skipMatch()">Skip</button>
         </div>
-        <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:10px;">
-          Platform: <strong>${escHtml(file.platform.name)}</strong>
-          &nbsp;·&nbsp; ${results.length} result${results.length !== 1 ? 's' : ''} — click to select
+        <div id="rom-search-count" style="font-size:11px;color:var(--text-tertiary);margin-bottom:10px;">
+          ${results.length} result${results.length !== 1 ? 's' : ''} — click to select
         </div>
         <div class="modal-results" id="rom-search-results">${this._renderResults(results, fileIndex)}</div>
       `);
@@ -267,6 +394,9 @@ const Roms = {
       <div class="modal-search">
         <input type="text" class="input" id="rom-search-input"
                value="${escHtml(query)}" placeholder="Search game title..." />
+        <select class="input" id="rom-search-platform" style="flex:0 0 auto;width:auto;max-width:200px;">
+          ${this._platformOptions(file.platform?.igdbId)}
+        </select>
         <button class="btn btn-primary" onclick="Roms.doSearch(${index})">Search</button>
       </div>
       <div class="modal-results" id="rom-search-results">
@@ -281,18 +411,33 @@ const Roms = {
   },
 
   async doSearch(index) {
-    const input     = document.getElementById('rom-search-input');
-    const resultsEl = document.getElementById('rom-search-results');
+    const input          = document.getElementById('rom-search-input');
+    const platformSelect = document.getElementById('rom-search-platform');
+    const resultsEl      = document.getElementById('rom-search-results');
     if (!input?.value.trim()) return;
     resultsEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-tertiary);">Searching...</div>';
-    const file    = this.files[index];
-    const results = await api.igdbSearch(input.value.trim(), file.platform?.igdbId || null);
+    const file   = this.files[index];
+    const source = this._batchSource || 'igdb';
+
+    // Use platform from the select if set, otherwise fall back to file's platform
+    const selVal   = platformSelect?.value;
+    const platformId    = selVal ? parseInt(selVal) : (file.platform?.igdbId || null);
+    const platformShort = platformSelect?.selectedOptions?.[0]?.dataset?.short || file.platform?.short;
+
+    let results;
+    if (source === 'ia') {
+      results = await api.iaSearch(input.value.trim(), platformShort);
+    } else {
+      results = await api.igdbSearch(input.value.trim(), platformId);
+    }
     if (!results || results.error || results.length === 0) {
       resultsEl.innerHTML = '<p style="color:var(--text-tertiary);font-size:13px;padding:10px;">No results found</p>';
       return;
     }
     this._searchResults = results;
     resultsEl.innerHTML = this._renderResults(results, index);
+    const countEl = document.getElementById('rom-search-count');
+    if (countEl) countEl.textContent = `${results.length} result${results.length !== 1 ? 's' : ''} — click to select`;
   },
 
   _renderResults(results, fileIndex) {
@@ -308,8 +453,10 @@ const Roms = {
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <span class="search-result-title">${escHtml(r.title)}</span>
             <span class="search-result-year">${r.year || 'N/A'}</span>
-            <span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;
-                         font-weight:700;background:#6a4c93;color:#fff;">IGDB</span>
+            ${r.source === 'IA'
+              ? `<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;background:#2d6a2d;color:#fff;">IA</span>`
+              : `<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;background:#6a4c93;color:#fff;">IGDB</span>`
+            }
           </div>
           ${r.platform ? `<div style="font-size:10.5px;color:var(--text-tertiary);margin-top:2px;">${escHtml(r.platform)}</div>` : ''}
           ${r.genre    ? `<div style="font-size:10.5px;color:var(--text-tertiary);">${escHtml(r.genre)}</div>` : ''}
@@ -322,6 +469,7 @@ const Roms = {
     const file  = this.files[fileIndex];
     const match = this._searchResults[resultIndex];
     file.match  = match;
+    if (match.category === 1 && file.contentType === 'game') file.contentType = 'dlc';
     file.status = 'matched';
     await this.updateNewName(file);
     this.render();
@@ -336,20 +484,34 @@ const Roms = {
   // ── Naming ──────────────────────────────────────────────────────
   async updateNewName(file) {
     if (!file.match) return;
-    const format        = await api.getStore('defaultRomFormat') || FormatEngine.defaults.rom;
+    const formatKeyMap = {
+      game:   { key: 'defaultRomFormat',       def: FormatEngine.defaults.rom       },
+      dlc:    { key: 'defaultRomDlcFormat',    def: FormatEngine.defaults.romDlc    },
+      update: { key: 'defaultRomUpdateFormat', def: FormatEngine.defaults.romUpdate },
+    };
+    const { key: fmtKey, def: fmtDefault } = formatKeyMap[file.contentType] || formatKeyMap.game;
+    const format        = await api.getStore(fmtKey) || fmtDefault;
     const outputDir     = await api.getStore('outputDirectory');
     const articleFolder = await api.getStore('romArticleFolder');
     const articleFile   = await api.getStore('romArticleFile');
+    const useEsDe       = await api.getStore('romEsDeNames');
     const match         = file.match;
+
+    const shortName  = file.platform?.short || match.platformAbbrev || '';
+    const esdeSystem = ES_DE_SYSTEM_MAP[shortName] || shortName.toLowerCase();
 
     const data = {
       title:         match.title         || '',
       year:          match.year          || '',
-      platform:      file.platform?.name || match.platform  || '',
-      platformShort: file.platform?.short || match.platformAbbrev || '',
+      platform:      useEsDe ? esdeSystem : (file.platform?.name || match.platform || ''),
+      platformShort: useEsDe ? esdeSystem : shortName,
+      esdeSystem,
       genre:         match.genre         || '',
       developer:     match.developer     || '',
       region:        file.region         || '',
+      disc:          file.disc           || '',
+      contentType:   file.contentType === 'game' ? '' : (file.contentType === 'dlc' ? 'DLC' : 'Update'),
+      version:       file.version        || '',
     };
 
     let formatted = FormatEngine.apply(format, data);
@@ -413,6 +575,77 @@ const Roms = {
     this.render();
   },
 
+  // ── Row context menu ────────────────────────────────────────────
+  showRowMenu(index, event) {
+    event.preventDefault();
+    if (typeof hideSourceMenus === 'function') hideSourceMenus();
+    this._ctxMenuIndex = index;
+    const file = this.files[index];
+    const menu = document.getElementById('rom-row-menu');
+    if (!menu) return;
+
+    // Update disc checkmarks
+    document.getElementById('rom-ctx-disc-none').textContent = (!file.disc ? '✓ ' : '') + 'None';
+    document.getElementById('rom-ctx-disc-1').textContent    = (file.disc === 'Disc 1' ? '✓ ' : '') + 'Disc 1';
+    document.getElementById('rom-ctx-disc-2').textContent    = (file.disc === 'Disc 2' ? '✓ ' : '') + 'Disc 2';
+    document.getElementById('rom-ctx-disc-3').textContent    = (file.disc === 'Disc 3' ? '✓ ' : '') + 'Disc 3';
+    document.getElementById('rom-ctx-disc-4').textContent    = (file.disc === 'Disc 4' ? '✓ ' : '') + 'Disc 4';
+
+    // Update content type checkmarks
+    document.getElementById('rom-ctx-type-game').textContent   = (file.contentType === 'game'   ? '✓ ' : '') + 'Game';
+    document.getElementById('rom-ctx-type-dlc').textContent    = (file.contentType === 'dlc'    ? '✓ ' : '') + 'DLC';
+    document.getElementById('rom-ctx-type-update').textContent = (file.contentType === 'update' ? '✓ ' : '') + 'Update';
+
+    // Position near cursor, clamped to viewport
+    const menuW = 170, menuH = 380;
+    const x = Math.min(event.clientX, window.innerWidth  - menuW - 8);
+    const y = Math.min(event.clientY, window.innerHeight - menuH - 8);
+    menu.style.left = x + 'px';
+    menu.style.top  = y + 'px';
+    menu.classList.remove('hidden');
+  },
+
+  async setDisc(discValue) {
+    document.getElementById('rom-row-menu')?.classList.add('hidden');
+    const file = this.files[this._ctxMenuIndex];
+    if (!file) return;
+    file.disc = discValue;
+    if (file.match) await this.updateNewName(file);
+    this.render();
+  },
+
+  async setContentType(type) {
+    document.getElementById('rom-row-menu')?.classList.add('hidden');
+    const file = this.files[this._ctxMenuIndex];
+    if (!file) return;
+    file.contentType = type;
+    if (file.match) await this.updateNewName(file);
+    this.render();
+  },
+
+  async setSelectedContentType(type) {
+    document.getElementById('rom-row-menu')?.classList.add('hidden');
+    const targets = this.files.filter(f => f.selected);
+    for (const f of targets) {
+      f.contentType = type;
+      if (f.match) await this.updateNewName(f);
+    }
+    this.render();
+    const typeLabel = { game: 'Game', dlc: 'DLC', update: 'Update' };
+    showToast(`Set ${targets.length} selected file${targets.length !== 1 ? 's' : ''} to ${typeLabel[type] || type}`, 'info');
+  },
+
+  async setAllContentType(type) {
+    document.getElementById('rom-row-menu')?.classList.add('hidden');
+    for (const f of this.files) {
+      f.contentType = type;
+      if (f.match) await this.updateNewName(f);
+    }
+    this.render();
+    const typeLabel = { game: 'Game', dlc: 'DLC', update: 'Update' };
+    showToast(`Set all ${this.files.length} ROM${this.files.length !== 1 ? 's' : ''} to ${typeLabel[type] || type}`, 'info');
+  },
+
   // ── Render ──────────────────────────────────────────────────────
   render() {
     const leftEl   = document.getElementById('roms-original-list');
@@ -431,7 +664,8 @@ const Roms = {
 
     // Left panel — original file rows
     leftEl.innerHTML = this.files.map((f, i) => `
-      <div class="file-row ${f.status === 'done' ? 'done' : ''} ${f.status === 'error' ? 'error-row' : ''}">
+      <div class="file-row ${f.status === 'done' ? 'done' : ''} ${f.status === 'error' ? 'error-row' : ''}"
+           oncontextmenu="Roms.showRowMenu(${i}, event)">
         <input type="checkbox" class="file-row-check" ${f.selected ? 'checked' : ''}
                onchange="Roms.files[${i}].selected = this.checked" />
         <svg class="file-row-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -442,7 +676,7 @@ const Roms = {
           <circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"/>
         </svg>
         <span class="file-row-name" title="${escHtml(f.path)}">${escHtml(f.name)}</span>
-        <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--bg-active);color:var(--text-tertiary);flex-shrink:0;font-family:var(--font-mono);">${escHtml(f.platform.short)}${f.region ? ' · ' + escHtml(f.region) : ''}</span>
+        <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--bg-active);color:var(--text-tertiary);flex-shrink:0;font-family:var(--font-mono);">${escHtml(f.platform.short)}${f.region ? ' · ' + escHtml(f.region) : ''}${f.disc ? ' · ' + escHtml(f.disc) : ''}${f.contentType !== 'game' ? ' · ' + f.contentType.toUpperCase() : ''}</span>
         <button class="file-row-action" onclick="Roms.showSearch(${i})" title="Search IGDB">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2">
@@ -453,9 +687,9 @@ const Roms = {
       </div>
     `).join('');
 
-    // Center arrows
+    // Center arrows — spacer matches the type-section-header height above the file rows
     if (arrowEl) {
-      arrowEl.innerHTML = this.files.map(f => {
+      arrowEl.innerHTML = '<div class="arrow-spacer">&nbsp;</div>' + this.files.map(f => {
         const cls = f.status === 'done' ? 'done' : (f.match ? 'active' : '');
         return `<div class="center-arrow-row ${cls}">→</div>`;
       }).join('');

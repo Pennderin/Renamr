@@ -122,15 +122,45 @@ const FormatEngine = {
         title: 'Super Mario World',
         platform: 'Super Nintendo Entertainment System',
         platformShort: 'SNES',
+        esdeSystem: 'snes',
         year: '1990',
         genre: 'Platform',
         developer: 'Nintendo',
-        region: 'USA'
+        region: 'USA',
+        disc: 'Disc 1',
+        contentType: '',
+        version: ''
+      },
+      romDlc: {
+        title: 'Super Mario World',
+        platform: 'Super Nintendo Entertainment System',
+        platformShort: 'SNES',
+        esdeSystem: 'snes',
+        year: '1990',
+        genre: 'Platform',
+        developer: 'Nintendo',
+        region: 'USA',
+        disc: '',
+        contentType: 'DLC',
+        version: 'v1.4.0'
+      },
+      romUpdate: {
+        title: 'Super Mario World',
+        platform: 'Super Nintendo Entertainment System',
+        platformShort: 'SNES',
+        esdeSystem: 'snes',
+        year: '1990',
+        genre: 'Platform',
+        developer: 'Nintendo',
+        region: 'USA',
+        disc: '',
+        contentType: 'Update',
+        version: 'v1.4.0'
       }
     };
 
     let result = this.apply(format, sampleData[type] || {});
-    const typeMap = { movie: 'movie', tv: 'tv', audiobook: 'audiobook', rom: 'rom' };
+    const typeMap = { movie: 'movie', tv: 'tv', audiobook: 'audiobook', rom: 'rom', romDlc: 'rom', romUpdate: 'rom' };
     const prefix = typeMap[type] || 'movie';
     const articleFolder = await api.getStore(`${prefix}ArticleFolder`);
     const articleFile = await api.getStore(`${prefix}ArticleFile`);
@@ -182,6 +212,8 @@ const FormatEngine = {
     movie: '{title} ({year})/{title} ({year})',
     tv: '{series}/Season {season}/{series} - S{season:2}E{episode:2} - {title}',
     audiobook: '{author}/{series}/{series} - Book {bookNum} - {title}/Chapter {chapter:2}',
-    rom: '{platform}/{title} ({year})'
+    rom: '{platform}/{title} ({year})',
+    romDlc: '{platform}/DLC/{title}',
+    romUpdate: '{platform}/Update/{title} ({version})'
   }
 };

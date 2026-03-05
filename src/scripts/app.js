@@ -31,7 +31,14 @@ document.addEventListener('click', (e) => {
 });
 
 // ── Navigation ───────────────────────────────────────────────────
-function navigateTo(page) {
+async function navigateTo(page) {
+  // Prompt to save if leaving the format editor with unsaved changes
+  if (currentPage === 'formats' && page !== 'formats' && Formats.hasUnsavedChanges()) {
+    const action = await Formats.promptUnsaved();
+    if (action === 'cancel') return;
+    if (action === 'save') await Formats.save();
+  }
+
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const pageEl = document.getElementById(`page-${page}`);

@@ -420,7 +420,7 @@ const Movies = {
     }).join('');
 
     // Arrows
-    document.getElementById('movies-arrows').innerHTML = this.files.map(f => {
+    document.getElementById('movies-arrows').innerHTML = '<div class="arrow-spacer">&nbsp;</div>' + this.files.map(f => {
       const cls = f.status === 'done' ? 'done' : (f.match ? 'active' : '');
       return `<div class="center-arrow-row ${cls}">→</div>`;
     }).join('');

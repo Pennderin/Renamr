@@ -95,7 +95,7 @@ const Organize = {
     if (type === 'movies' && Movies.files.length > 0) await Movies.matchAll(source);
     if (type === 'tv' && TV.files.length > 0) await TV.matchAll(source);
     if (type === 'audiobooks' && Audiobooks.files.length > 0) await Audiobooks.matchAll(source);
-    if (type === 'roms' && Roms.files.length > 0) await Roms.matchAll();
+    if (type === 'roms' && Roms.files.length > 0) await Roms.matchAll(source);
     this.updateUI();
   },
 

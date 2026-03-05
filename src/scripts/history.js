@@ -3,6 +3,8 @@
 // ═══════════════════════════════════════════════════════════════════
 
 const History = {
+  _undoResolve: null,
+
   async render() {
     const container = document.getElementById('history-list');
     const history = await api.getStore('history') || [];
@@ -68,15 +70,61 @@ const History = {
     const entry = history[index];
     if (!entry) return;
 
+    // Confirm before undoing
+    const dateStr = new Date(entry.date).toLocaleDateString('en-US', {
+      weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+    const confirmed = await new Promise(resolve => {
+      this._undoResolve = resolve;
+      showModal('Confirm Undo', `
+        <p style="margin-bottom:8px;color:var(--text-secondary);">
+          Undo <strong>${entry.successCount}</strong> rename${entry.successCount !== 1 ? 's' : ''} from <strong>${dateStr}</strong>?
+        </p>
+        <p style="margin-bottom:16px;font-size:12px;color:var(--text-tertiary);">
+          Files will be renamed back to their original names.
+        </p>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button class="btn btn-secondary" onclick="History._resolveUndo(false)">Cancel</button>
+          <button class="btn btn-primary" onclick="History._resolveUndo(true)">Undo</button>
+        </div>
+      `);
+      // Resolve false if modal is dismissed externally
+      const overlay = document.getElementById('modal-overlay');
+      if (overlay) {
+        const observer = new MutationObserver(() => {
+          if (overlay.classList.contains('hidden')) {
+            observer.disconnect();
+            if (this._undoResolve) { this._undoResolve(false); this._undoResolve = null; }
+          }
+        });
+        observer.observe(overlay, { attributes: true, attributeFilter: ['class'] });
+      }
+    });
+
+    if (!confirmed) return;
+
     const results = await api.undoRename(entry.operations);
     const success = results.filter(r => r.success).length;
 
-    showToast(`Undid ${success} of ${entry.operations.length} renames`, success > 0 ? 'success' : 'error');
+    if (success === 0) {
+      showToast('Undo failed — files may have already been moved or deleted', 'error');
+      return;
+    }
 
-    // Remove from history
+    showToast(`Undid ${success} of ${entry.operations.length} renames`, 'success');
+
+    // Remove from history only after at least a partial success
     history.splice(index, 1);
     await api.setStore('history', history);
     this.render();
+  },
+
+  _resolveUndo(confirmed) {
+    const resolve = this._undoResolve;
+    this._undoResolve = null;
+    hideModal();
+    if (resolve) resolve(confirmed);
   },
 
   async clearAll() {
