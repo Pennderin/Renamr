@@ -614,20 +614,16 @@ const Roms = {
     document.getElementById('rom-ctx-type-dlc').textContent    = (file.contentType === 'dlc'    ? '✓ ' : '') + 'DLC';
     document.getElementById('rom-ctx-type-update').textContent = (file.contentType === 'update' ? '✓ ' : '') + 'Update';
 
-    // Position near cursor, clamped to viewport
-    // Menu is now compact (5 items); submenus are flyouts — need 170px + 120px = 290px horizontal room
-    const menuW = 170, menuH = 160, subW = 130;
+    // Collapse all accordion sections when opening
+    menu.querySelectorAll('.has-sub').forEach(el => el.classList.remove('sub-open'));
+
+    // Position near cursor, clamped to viewport (collapsed menu ~140px tall)
+    const menuW = 175, menuH = 140;
     const vw = window.innerWidth, vh = window.innerHeight;
     const x = Math.min(event.clientX, vw - menuW - 8);
     const y = Math.min(event.clientY, vh - menuH - 8);
     menu.style.left = x + 'px';
     menu.style.top  = y + 'px';
-    // Flip submenus left if there's not enough room to the right
-    if (x + menuW + subW > vw) {
-      menu.classList.add('flip-sub');
-    } else {
-      menu.classList.remove('flip-sub');
-    }
     menu.classList.remove('hidden');
   },
 

@@ -482,7 +482,7 @@
   <!-- ROM row right-click context menu (position:fixed so it's not clipped by scroll containers) -->
   <div class="source-menu hidden" id="rom-row-menu" style="position:fixed;z-index:200;min-width:170px;">
     <div class="source-menu-group">
-      <div class="source-menu-item has-sub">
+      <div class="source-menu-item has-sub" onclick="this.classList.toggle('sub-open');event.stopPropagation();">
         Disc
         <div class="source-submenu">
           <div class="source-menu-item" id="rom-ctx-disc-none"   onclick="Roms.setDisc(null)">None</div>
@@ -492,7 +492,7 @@
           <div class="source-menu-item" id="rom-ctx-disc-4"      onclick="Roms.setDisc('Disc 4')">Disc 4</div>
         </div>
       </div>
-      <div class="source-menu-item has-sub">
+      <div class="source-menu-item has-sub" onclick="this.classList.toggle('sub-open');event.stopPropagation();">
         Content Type
         <div class="source-submenu">
           <div class="source-menu-item" id="rom-ctx-type-game"   onclick="Roms.setContentType('game')">Game</div>
@@ -503,7 +503,7 @@
     </div>
     <div class="source-menu-sep"></div>
     <div class="source-menu-group">
-      <div class="source-menu-item has-sub">
+      <div class="source-menu-item has-sub" onclick="this.classList.toggle('sub-open');event.stopPropagation();">
         Set Selected As
         <div class="source-submenu">
           <div class="source-menu-item" onclick="Roms.setSelectedContentType('game')">Game</div>
@@ -511,7 +511,7 @@
           <div class="source-menu-item" onclick="Roms.setSelectedContentType('update')">Update</div>
         </div>
       </div>
-      <div class="source-menu-item has-sub">
+      <div class="source-menu-item has-sub" onclick="this.classList.toggle('sub-open');event.stopPropagation();">
         Set All As
         <div class="source-submenu">
           <div class="source-menu-item" onclick="Roms.setAllContentType('game')">Game</div>

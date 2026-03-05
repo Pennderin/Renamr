@@ -18,6 +18,8 @@ const store = new Store({
     defaultTvFormat: '{series}/Season {season}/{series} - S{season}E{episode} - {title}',
     defaultAudiobookFormat: '{author}/{title}/{title} - Chapter {track}',
     defaultRomFormat: '{platform}/{title} ({year})',
+    defaultRomDlcFormat: '{platform}/DLC/{title}',
+    defaultRomUpdateFormat: '{platform}/Update/{title} ({version})',
     outputDirectory: '',
     theme: 'dark',
     history: [],
@@ -25,6 +27,7 @@ const store = new Store({
     igdbClientSecret: '',
     igdbAccessToken: '',
     igdbTokenExpiry: 0,
+    romEsDeNames: false,
     romArticleFolder: false,
     romArticleFile: false
   }
@@ -743,7 +746,6 @@ ipcMain.handle('books:google', async (_, query) => {
     if (!res.data.items) return [];
     return res.data.items.slice(0, 10).map(item => {
       const v = item.volumeInfo || {};
-      const fullTitle = [v.title, v.subtitle].filter(Boolean).join(': ');
 
       // Extract series info from title, subtitle, and description
       const { series, seriesNum } = extractSeriesFromGoogleBook(v);
@@ -1143,7 +1145,6 @@ function parseMediaFilename(filename) {
 }
 
 function extractMediaTags(str) {
-  const s = str.toLowerCase();
   const result = {
     resolution: '',
     source: '',
