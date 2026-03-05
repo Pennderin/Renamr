@@ -126,6 +126,39 @@ const Organize = {
     this.updateUI();
   },
 
+  // ── Right-click row remove menu ──────────────────────────────
+  _orgCtxType: null,
+  _orgCtxIndex: -1,
+
+  showRowMenu(type, index, event) {
+    event.preventDefault();
+    event.stopPropagation();
+    hideSourceMenus();
+    this._orgCtxType = type;
+    this._orgCtxIndex = index;
+    const menu = document.getElementById('org-row-menu');
+    if (!menu) return;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const mw = 160, mh = 40;
+    let x = event.clientX, y = event.clientY;
+    if (x + mw > vw) x = vw - mw - 4;
+    if (y + mh > vh) y = vh - mh - 4;
+    menu.style.left = x + 'px';
+    menu.style.top  = y + 'px';
+    menu.classList.remove('hidden');
+  },
+
+  removeEntry() {
+    document.getElementById('org-row-menu')?.classList.add('hidden');
+    const { _orgCtxType: type, _orgCtxIndex: index } = this;
+    if (index < 0) return;
+    if (type === 'movies') Movies.removeFile(index);
+    else if (type === 'tv') TV.removeFile(index);
+    else if (type === 'audiobooks') Audiobooks.removeBook(index);
+    this._orgCtxType = null;
+    this._orgCtxIndex = -1;
+  },
+
   // ── Right-click match menu ───────────────────────────────────
   showMatchMenu(event) {
     event.preventDefault();

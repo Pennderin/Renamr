@@ -647,6 +647,12 @@ const Roms = {
     showToast(`Set all ${this.files.length} ROM${this.files.length !== 1 ? 's' : ''} to ${typeLabel[type] || type}`, 'info');
   },
 
+  removeFile(index) {
+    document.getElementById('rom-row-menu')?.classList.add('hidden');
+    this.files.splice(index, 1);
+    this.render();
+  },
+
   // ── Render ──────────────────────────────────────────────────────
   render() {
     const leftEl   = document.getElementById('roms-original-list');

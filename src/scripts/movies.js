@@ -381,6 +381,7 @@ const Movies = {
     showToast(`Renamed ${success} files${fail > 0 ? `, ${fail} failed` : ''}`, success > 0 ? 'success' : 'error');
   },
 
+  removeFile(index) { this.files.splice(index, 1); this.render(); },
   toggleAll(checked) { this.files.forEach(f => f.selected = checked); this.render(); },
   clear() { this.files = []; this.render(); },
 
@@ -405,7 +406,7 @@ const Movies = {
       const tagStr = tags.length ? `<span class="file-row-tags">${tags.join(' · ')}</span>` : '';
 
       return `
-        <div class="file-row ${f.status === 'done' ? 'done' : ''} ${f.status === 'error' ? 'error-row' : ''}">
+        <div class="file-row ${f.status === 'done' ? 'done' : ''} ${f.status === 'error' ? 'error-row' : ''}" oncontextmenu="Organize.showRowMenu('movies',${i},event)">
           <input type="checkbox" class="file-row-check" ${f.selected ? 'checked' : ''} onchange="Movies.files[${i}].selected=this.checked" />
           <svg class="file-row-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2"/></svg>
           <div class="file-row-nameblock">

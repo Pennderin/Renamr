@@ -923,6 +923,14 @@ const Audiobooks = {
     if (buttonsEl) buttonsEl.innerHTML = '<button class="btn btn-primary" onclick="hideModal()">Done</button>';
   },
 
+  removeBook(bookIndex) {
+    const book = this.books[bookIndex];
+    if (!book) return;
+    this.files = this.files.filter(f => !book.files.includes(f));
+    this.books.splice(bookIndex, 1);
+    this.render();
+  },
+
   // ── Clear / Refresh ─────────────────────────────────────────────
   clear() { this.files = []; this.books = []; this.render(); },
 
@@ -978,7 +986,7 @@ const Audiobooks = {
 
       // Book header row (left side)
       leftHtml += `
-        <div class="file-row book-header">
+        <div class="file-row book-header" oncontextmenu="Organize.showRowMenu('audiobooks',${bi},event)">
           ${book.coverUrl ? `<img src="${book.coverUrl}" class="book-cover-thumb" />` : '<div class="book-cover-thumb book-cover-placeholder">📚</div>'}
           <div class="file-row-nameblock">
             <span class="file-row-name book-title-row">${escapeHtml(book.title || 'Unknown Book')}</span>

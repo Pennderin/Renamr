@@ -506,6 +506,12 @@
       <div class="source-menu-item" onclick="Roms.setAllContentType('dlc')">DLC</div>
       <div class="source-menu-item" onclick="Roms.setAllContentType('update')">Update</div>
     </div>
+    <div class="source-menu-sep"></div>
+    <div class="source-menu-item" style="color:var(--danger,#e05c5c)" onclick="Roms.removeFile(Roms._ctxMenuIndex); document.getElementById('rom-row-menu').classList.add('hidden');">Remove from list</div>
+  </div>
+
+  <div class="source-menu hidden" id="org-row-menu" style="position:fixed;z-index:200;min-width:160px;">
+    <div class="source-menu-item" style="color:var(--danger,#e05c5c)" onclick="Organize.removeEntry()">Remove from list</div>
   </div>
 </body>
 </html>
