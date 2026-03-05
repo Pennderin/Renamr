@@ -90,7 +90,7 @@ ipcMain.handle('files:isDirectory', async (_, filePath) => {
 // ── File Scanner ─────────────────────────────────────────────────
 ipcMain.handle('files:scan', async (_, dirPath, mediaType) => {
   const ROM_EXTS = ['nes','snes','n64','z64','v64','gba','gbc','gb','nds','3ds',
-    'iso','cso','chd','rvz','gcz','wbfs','wad','cia','xci','nsp','nsz','pce',
+    'iso','cso','chd','rvz','gcz','wbfs','wad','cia','cci','xci','nsp','nsz','pce',
     'md','smd','gen','gg','32x','sfc','smc','fig','bs','st',
     'a26','a52','a78','lnx','ngp','ngc','ws','wsc','psx','pbp',
     'cdi','nrg','img','bin','cue'];

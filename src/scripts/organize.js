@@ -6,7 +6,7 @@
 const VIDEO_EXTS = new Set(['.mkv','.mp4','.avi','.mov','.wmv','.flv','.webm','.m4v','.ts','.mpg','.mpeg','.divx','.ogv','.3gp']);
 const AUDIO_EXTS = new Set(['.mp3','.m4a','.m4b','.flac','.ogg','.opus','.wma','.aac','.wav','.ape','.alac','.aiff']);
 const ORG_ROM_EXTS = new Set(['.nes','.snes','.n64','.z64','.v64','.gba','.gbc','.gb','.nds','.3ds',
-  '.iso','.cso','.chd','.rvz','.gcz','.wbfs','.wad','.cia','.xci','.nsp','.nsz','.pce',
+  '.iso','.cso','.chd','.rvz','.gcz','.wbfs','.wad','.cia','.cci','.xci','.nsp','.nsz','.pce',
   '.md','.smd','.gen','.gg','.32x','.sfc','.smc','.fig','.bs','.st',
   '.a26','.a52','.a78','.lnx','.ngp','.ngc','.ws','.wsc','.psx','.pbp',
   '.cdi','.nrg','.img','.bin','.cue']);
@@ -50,7 +50,7 @@ const Organize = {
   // ── Add Files (dialog) ───────────────────────────────────────
   async addFiles() {
     const paths = await api.openFiles([
-      { name: 'All Media & ROM Files', extensions: ['mkv','mp4','avi','mov','wmv','flv','m4v','webm','ts','mpg','mpeg','mp3','m4a','m4b','flac','ogg','wma','aac','opus','wav','nes','snes','n64','z64','v64','gba','gbc','gb','nds','3ds','iso','cso','chd','rvz','gcz','wbfs','wad','cia','xci','nsp','nsz','pce','md','smd','gen','gg','32x','sfc','smc','fig','a26','a52','a78','lnx','ngp','ngc','ws','wsc','psx','pbp','cdi','nrg','img','bin','cue'] },
+      { name: 'All Media & ROM Files', extensions: ['mkv','mp4','avi','mov','wmv','flv','m4v','webm','ts','mpg','mpeg','mp3','m4a','m4b','flac','ogg','wma','aac','opus','wav','nes','snes','n64','z64','v64','gba','gbc','gb','nds','3ds','iso','cso','chd','rvz','gcz','wbfs','wad','cia','cci','xci','nsp','nsz','pce','md','smd','gen','gg','32x','sfc','smc','fig','a26','a52','a78','lnx','ngp','ngc','ws','wsc','psx','pbp','cdi','nrg','img','bin','cue'] },
       { name: 'All Files', extensions: ['*'] }
     ]);
     if (!paths || paths.length === 0) return;
