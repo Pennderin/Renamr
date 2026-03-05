@@ -480,35 +480,45 @@
   <script src="scripts/app.js"></script>
 
   <!-- ROM row right-click context menu (position:fixed so it's not clipped by scroll containers) -->
-  <div class="source-menu hidden" id="rom-row-menu" style="position:fixed;z-index:200;min-width:160px;">
+  <div class="source-menu hidden" id="rom-row-menu" style="position:fixed;z-index:200;min-width:170px;">
     <div class="source-menu-group">
-      <div class="source-menu-label">Disc</div>
-      <div class="source-menu-item" id="rom-ctx-disc-none"   onclick="Roms.setDisc(null)">None</div>
-      <div class="source-menu-item" id="rom-ctx-disc-1"      onclick="Roms.setDisc('Disc 1')">Disc 1</div>
-      <div class="source-menu-item" id="rom-ctx-disc-2"      onclick="Roms.setDisc('Disc 2')">Disc 2</div>
-      <div class="source-menu-item" id="rom-ctx-disc-3"      onclick="Roms.setDisc('Disc 3')">Disc 3</div>
-      <div class="source-menu-item" id="rom-ctx-disc-4"      onclick="Roms.setDisc('Disc 4')">Disc 4</div>
+      <div class="source-menu-item has-sub">
+        Disc
+        <div class="source-submenu">
+          <div class="source-menu-item" id="rom-ctx-disc-none"   onclick="Roms.setDisc(null)">None</div>
+          <div class="source-menu-item" id="rom-ctx-disc-1"      onclick="Roms.setDisc('Disc 1')">Disc 1</div>
+          <div class="source-menu-item" id="rom-ctx-disc-2"      onclick="Roms.setDisc('Disc 2')">Disc 2</div>
+          <div class="source-menu-item" id="rom-ctx-disc-3"      onclick="Roms.setDisc('Disc 3')">Disc 3</div>
+          <div class="source-menu-item" id="rom-ctx-disc-4"      onclick="Roms.setDisc('Disc 4')">Disc 4</div>
+        </div>
+      </div>
+      <div class="source-menu-item has-sub">
+        Content Type
+        <div class="source-submenu">
+          <div class="source-menu-item" id="rom-ctx-type-game"   onclick="Roms.setContentType('game')">Game</div>
+          <div class="source-menu-item" id="rom-ctx-type-dlc"    onclick="Roms.setContentType('dlc')">DLC</div>
+          <div class="source-menu-item" id="rom-ctx-type-update" onclick="Roms.setContentType('update')">Update</div>
+        </div>
+      </div>
     </div>
     <div class="source-menu-sep"></div>
     <div class="source-menu-group">
-      <div class="source-menu-label">Content Type</div>
-      <div class="source-menu-item" id="rom-ctx-type-game"   onclick="Roms.setContentType('game')">Game</div>
-      <div class="source-menu-item" id="rom-ctx-type-dlc"    onclick="Roms.setContentType('dlc')">DLC</div>
-      <div class="source-menu-item" id="rom-ctx-type-update" onclick="Roms.setContentType('update')">Update</div>
-    </div>
-    <div class="source-menu-sep"></div>
-    <div class="source-menu-group">
-      <div class="source-menu-label">Set Selected As</div>
-      <div class="source-menu-item" onclick="Roms.setSelectedContentType('game')">Game</div>
-      <div class="source-menu-item" onclick="Roms.setSelectedContentType('dlc')">DLC</div>
-      <div class="source-menu-item" onclick="Roms.setSelectedContentType('update')">Update</div>
-    </div>
-    <div class="source-menu-sep"></div>
-    <div class="source-menu-group">
-      <div class="source-menu-label">Set All As</div>
-      <div class="source-menu-item" onclick="Roms.setAllContentType('game')">Game</div>
-      <div class="source-menu-item" onclick="Roms.setAllContentType('dlc')">DLC</div>
-      <div class="source-menu-item" onclick="Roms.setAllContentType('update')">Update</div>
+      <div class="source-menu-item has-sub">
+        Set Selected As
+        <div class="source-submenu">
+          <div class="source-menu-item" onclick="Roms.setSelectedContentType('game')">Game</div>
+          <div class="source-menu-item" onclick="Roms.setSelectedContentType('dlc')">DLC</div>
+          <div class="source-menu-item" onclick="Roms.setSelectedContentType('update')">Update</div>
+        </div>
+      </div>
+      <div class="source-menu-item has-sub">
+        Set All As
+        <div class="source-submenu">
+          <div class="source-menu-item" onclick="Roms.setAllContentType('game')">Game</div>
+          <div class="source-menu-item" onclick="Roms.setAllContentType('dlc')">DLC</div>
+          <div class="source-menu-item" onclick="Roms.setAllContentType('update')">Update</div>
+        </div>
+      </div>
     </div>
     <div class="source-menu-sep"></div>
     <div class="source-menu-item" style="color:var(--danger,#e05c5c)" onclick="Roms.removeFile(Roms._ctxMenuIndex); document.getElementById('rom-row-menu').classList.add('hidden');">Remove from list</div>

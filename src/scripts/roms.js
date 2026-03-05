@@ -615,11 +615,19 @@ const Roms = {
     document.getElementById('rom-ctx-type-update').textContent = (file.contentType === 'update' ? '✓ ' : '') + 'Update';
 
     // Position near cursor, clamped to viewport
-    const menuW = 170, menuH = 380;
-    const x = Math.min(event.clientX, window.innerWidth  - menuW - 8);
-    const y = Math.min(event.clientY, window.innerHeight - menuH - 8);
+    // Menu is now compact (5 items); submenus are flyouts — need 170px + 120px = 290px horizontal room
+    const menuW = 170, menuH = 160, subW = 130;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const x = Math.min(event.clientX, vw - menuW - 8);
+    const y = Math.min(event.clientY, vh - menuH - 8);
     menu.style.left = x + 'px';
     menu.style.top  = y + 'px';
+    // Flip submenus left if there's not enough room to the right
+    if (x + menuW + subW > vw) {
+      menu.classList.add('flip-sub');
+    } else {
+      menu.classList.remove('flip-sub');
+    }
     menu.classList.remove('hidden');
   },
 

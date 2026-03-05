@@ -395,6 +395,27 @@ input, button { font-family: inherit; font-size: inherit; }
 }
 .source-menu-sep { border-top: 1px solid var(--border); margin: 2px 0; }
 
+/* ── Flyout submenus ─────────────────────────────────────────── */
+.source-menu-item.has-sub { position: relative; justify-content: space-between; }
+.source-menu-item.has-sub::after { content: '▶'; font-size: 9px; opacity: 0.5; margin-left: 8px; }
+.source-submenu {
+  display: none;
+  position: absolute;
+  top: -4px;
+  left: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  z-index: 201;
+  min-width: 120px;
+  overflow: hidden;
+  animation: fadeIn 0.08s;
+}
+.source-menu-item.has-sub:hover .source-submenu { display: block; }
+/* Flip submenus to the left when parent menu is near right edge */
+#rom-row-menu.flip-sub .source-submenu { left: auto; right: 100%; }
+
 /* ── Type section headers (unified workspace) ────────────────── */
 .type-section { margin-bottom: 2px; }
 .type-section-header {
