@@ -404,8 +404,18 @@ async function _getIgdbToken() {
   return token;
 }
 
+// IGDB rate limiter — max 4 req/sec; enforce 275ms minimum gap
+let _igdbLastCall = 0;
+async function _igdbThrottle() {
+  const now = Date.now();
+  const gap = now - _igdbLastCall;
+  if (gap < 275) await new Promise(r => setTimeout(r, 275 - gap));
+  _igdbLastCall = Date.now();
+}
+
 ipcMain.handle('igdb:search', async (_, query, platformId) => {
   try {
+    await _igdbThrottle();
     const clientId = store.get('igdbClientId');
     const token    = await _getIgdbToken();
 
@@ -414,14 +424,27 @@ ipcMain.handle('igdb:search', async (_, query, platformId) => {
     body    += `limit 10;\n`;
     if (platformId) body += `where platforms = (${platformId});\n`;
 
-    const res = await axios.post('https://api.igdb.com/v4/games', body, {
-      headers: {
-        'Client-ID': clientId,
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'text/plain'
-      },
-      timeout: 10000
-    });
+    let res;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        res = await axios.post('https://api.igdb.com/v4/games', body, {
+          headers: {
+            'Client-ID': clientId,
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'text/plain'
+          },
+          timeout: 10000
+        });
+        break;
+      } catch (reqErr) {
+        if (reqErr.response?.status === 429 && attempt < 3) {
+          console.warn(`IGDB 429 rate limit, retrying in ${attempt}s...`);
+          await new Promise(r => setTimeout(r, 1000 * attempt));
+        } else {
+          throw reqErr;
+        }
+      }
+    }
 
     const items = Array.isArray(res.data) ? res.data : [];
     return items.map(item => {
