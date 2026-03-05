@@ -291,7 +291,7 @@ const Movies = {
   async updateNewName(file) {
     if (!file.match) return;
     const format = await api.getStore('defaultMovieFormat') || FormatEngine.defaults.movie;
-    const outputDir = await api.getStore('outputDirectory');
+    const outputDir = await api.getStore('movieOutputDirectory') || await api.getStore('outputDirectory');
     const articleFolder = await api.getStore('movieArticleFolder');
     const articleFile = await api.getStore('movieArticleFile');
 

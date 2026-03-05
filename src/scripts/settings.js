@@ -35,6 +35,13 @@ const Settings = {
       document.getElementById('settings-output-dir').value = outputDir;
     }
 
+    const typeDirs = { movie: 'movieOutputDirectory', tv: 'tvOutputDirectory', audiobook: 'audiobookOutputDirectory', rom: 'romOutputDirectory' };
+    for (const [type, key] of Object.entries(typeDirs)) {
+      const dir = await api.getStore(key) || '';
+      const el = document.getElementById(`settings-${type}-output-dir`);
+      if (el && dir) el.value = dir;
+    }
+
     const articleTypes = ['movie', 'tv', 'audiobook', 'rom'];
     for (const t of articleTypes) {
       const folderVal = await api.getStore(`${t}ArticleFolder`) || false;
@@ -141,19 +148,29 @@ const Settings = {
     }
   },
 
-  async selectOutputDir() {
+  _outputDirMeta: {
+    movie:     { key: 'movieOutputDirectory',     elId: 'settings-movie-output-dir',     label: 'Movies' },
+    tv:        { key: 'tvOutputDirectory',         elId: 'settings-tv-output-dir',         label: 'TV Shows' },
+    audiobook: { key: 'audiobookOutputDirectory',  elId: 'settings-audiobook-output-dir',  label: 'Audiobooks' },
+    rom:       { key: 'romOutputDirectory',        elId: 'settings-rom-output-dir',        label: 'ROMs' },
+    global:    { key: 'outputDirectory',           elId: 'settings-output-dir',            label: 'Global fallback' },
+  },
+
+  async selectOutputDir(type = 'global') {
+    const { key, elId, label } = this._outputDirMeta[type] || this._outputDirMeta.global;
     const dir = await api.openDirectory();
     if (dir) {
-      document.getElementById('settings-output-dir').value = dir;
-      await api.setStore('outputDirectory', dir);
-      showToast('Output directory set', 'success');
+      document.getElementById(elId).value = dir;
+      await api.setStore(key, dir);
+      showToast(`${label} output directory set`, 'success');
     }
   },
 
-  async clearOutputDir() {
-    document.getElementById('settings-output-dir').value = '';
-    await api.setStore('outputDirectory', '');
-    showToast('Output directory cleared — files will be renamed in place', 'info');
+  async clearOutputDir(type = 'global') {
+    const { key, elId, label } = this._outputDirMeta[type] || this._outputDirMeta.global;
+    document.getElementById(elId).value = '';
+    await api.setStore(key, '');
+    showToast(`${label} output directory cleared`, 'info');
   },
 
   async saveRomEsDeNames() {

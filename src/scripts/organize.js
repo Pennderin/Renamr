@@ -83,10 +83,12 @@ const Organize = {
   _cancelMatch: false,
 
   _setMatching(active) {
-    const matchBtn = document.getElementById('organize-match-btn');
-    const stopBtn  = document.getElementById('organize-stop-btn');
-    if (matchBtn) matchBtn.style.display = active ? 'none' : '';
-    if (stopBtn)  stopBtn.style.display  = active ? ''     : 'none';
+    const matchBtn     = document.getElementById('organize-match-btn');
+    const stopBtn      = document.getElementById('organize-stop-btn');
+    const modalStopBtn = document.getElementById('modal-stop-btn');
+    if (matchBtn)     matchBtn.style.display     = active ? 'none' : '';
+    if (stopBtn)      stopBtn.style.display      = active ? ''     : 'none';
+    if (modalStopBtn) modalStopBtn.style.display = active ? ''     : 'none';
   },
 
   stopMatching() {

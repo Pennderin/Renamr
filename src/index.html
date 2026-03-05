@@ -391,6 +391,8 @@
       <div class="page" id="page-settings">
         <div class="page-topbar"><div class="topbar-left"><h2 class="page-title">Settings</h2><span class="topbar-stats">Configure API keys and preferences</span></div></div>
         <div class="settings-grid">
+
+          <!-- API Keys -->
           <div class="config-card"><h3>TMDB API Key</h3><p class="setting-desc">Required for movie and TV show metadata. Get a free key at themoviedb.org</p><div class="input-row"><input type="password" id="settings-tmdb-key" class="input" placeholder="Enter your TMDB API key" /><button class="btn btn-secondary" onclick="Settings.toggleKeyVisibility('tmdb')">Show</button><button class="btn btn-primary" onclick="Settings.saveApiKey('tmdb')">Save</button></div><div id="tmdb-key-status" class="key-status"></div></div>
           <div class="config-card"><h3>OMDb API Key <span style="font-size:11px;color:var(--text-tertiary);font-weight:400;">(optional)</span></h3><p class="setting-desc">Adds OMDb/IMDb as an additional source. Get a free key at omdbapi.com</p><div class="input-row"><input type="password" id="settings-omdb-key" class="input" placeholder="Enter your OMDb API key (optional)" /><button class="btn btn-secondary" onclick="Settings.toggleKeyVisibility('omdb')">Show</button><button class="btn btn-primary" onclick="Settings.saveApiKey('omdb')">Save</button></div><div id="omdb-key-status" class="key-status"></div></div>
           <div class="config-card">
@@ -407,17 +409,36 @@
             </div>
             <div id="igdb-key-status" class="key-status"></div>
           </div>
+
+          <!-- Output Directories -->
           <div class="config-card">
-            <h3>ROM Options</h3>
-            <p class="setting-desc">Additional options for ROM renaming.</p>
-            <label class="setting-checkbox">
-              <input type="checkbox" id="settings-rom-esde" onchange="Settings.saveRomEsDeNames()" />
-              <span>Use ES-DE system folder names &nbsp;<span style="font-size:10.5px;color:var(--text-tertiary);">(e.g. <code>snes</code>, <code>gba</code>, <code>n3ds</code> instead of <code>SNES</code>, <code>GBA</code>, <code>3DS</code>)</span></span>
-            </label>
-            <p class="setting-desc" style="margin-top:8px;font-size:10.5px;">When enabled, <code>{platformShort}</code> outputs ES-DE folder names. You can also use <code>{esdeSystem}</code> in your format string directly.</p>
+            <h3>Output Directories</h3>
+            <p class="setting-desc">Where renamed files are placed for each media type. Leave empty to rename in place. Type-specific paths take priority over the global fallback.</p>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+              <div>
+                <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:5px;">Movies</div>
+                <div class="input-row"><input type="text" id="settings-movie-output-dir" class="input" placeholder="Rename in place" readonly /><button class="btn btn-secondary" onclick="Settings.selectOutputDir('movie')">Browse</button><button class="btn btn-secondary" onclick="Settings.clearOutputDir('movie')">Clear</button></div>
+              </div>
+              <div>
+                <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:5px;">TV Shows</div>
+                <div class="input-row"><input type="text" id="settings-tv-output-dir" class="input" placeholder="Rename in place" readonly /><button class="btn btn-secondary" onclick="Settings.selectOutputDir('tv')">Browse</button><button class="btn btn-secondary" onclick="Settings.clearOutputDir('tv')">Clear</button></div>
+              </div>
+              <div>
+                <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:5px;">Audiobooks</div>
+                <div class="input-row"><input type="text" id="settings-audiobook-output-dir" class="input" placeholder="Rename in place" readonly /><button class="btn btn-secondary" onclick="Settings.selectOutputDir('audiobook')">Browse</button><button class="btn btn-secondary" onclick="Settings.clearOutputDir('audiobook')">Clear</button></div>
+              </div>
+              <div>
+                <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:5px;">ROMs</div>
+                <div class="input-row"><input type="text" id="settings-rom-output-dir" class="input" placeholder="Rename in place" readonly /><button class="btn btn-secondary" onclick="Settings.selectOutputDir('rom')">Browse</button><button class="btn btn-secondary" onclick="Settings.clearOutputDir('rom')">Clear</button></div>
+              </div>
+              <div style="padding-top:10px;border-top:1px solid var(--border-subtle);">
+                <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:5px;">Global Fallback <span style="font-size:10.5px;font-weight:400;color:var(--text-tertiary);">(used when no type-specific path is set)</span></div>
+                <div class="input-row"><input type="text" id="settings-output-dir" class="input" placeholder="Rename files in place" readonly /><button class="btn btn-secondary" onclick="Settings.selectOutputDir('global')">Browse</button><button class="btn btn-secondary" onclick="Settings.clearOutputDir('global')">Clear</button></div>
+              </div>
+            </div>
           </div>
-          <div class="config-card"><h3>Free Sources</h3><p class="setting-desc"><strong>TVmaze</strong> — TV show data, no API key needed. Automatically included in search results.<br><strong>OpenLibrary</strong> — Audiobook/book data, no API key needed.<br><strong>Internet Archive</strong> — ROM name lookup, no API key needed. Available in the ROMs match menu.</p></div>
-          <div class="config-card"><h3>Default Output Directory</h3><p class="setting-desc">Where renamed files are placed. Leave empty to rename in place.</p><div class="input-row"><input type="text" id="settings-output-dir" class="input" placeholder="Rename files in place" readonly /><button class="btn btn-secondary" onclick="Settings.selectOutputDir()">Browse</button><button class="btn btn-secondary" onclick="Settings.clearOutputDir()">Clear</button></div></div>
+
+          <!-- Article Sorting -->
           <div class="config-card"><h3>Article Sorting</h3><p class="setting-desc">Move leading articles (The, A, An) to the end — e.g. "The Shawshank Redemption" → "Shawshank Redemption, The"</p>
             <div style="display:flex;flex-direction:column;gap:12px;margin-top:10px;">
               <div>
@@ -450,7 +471,22 @@
               </div>
             </div>
           </div>
+
+          <!-- ROM Options -->
+          <div class="config-card">
+            <h3>ROM Options</h3>
+            <p class="setting-desc">Additional options for ROM renaming.</p>
+            <label class="setting-checkbox">
+              <input type="checkbox" id="settings-rom-esde" onchange="Settings.saveRomEsDeNames()" />
+              <span>Use ES-DE system folder names &nbsp;<span style="font-size:10.5px;color:var(--text-tertiary);">(e.g. <code>snes</code>, <code>gba</code>, <code>n3ds</code> instead of <code>SNES</code>, <code>GBA</code>, <code>3DS</code>)</span></span>
+            </label>
+            <p class="setting-desc" style="margin-top:8px;font-size:10.5px;">When enabled, <code>{platformShort}</code> outputs ES-DE folder names. You can also use <code>{esdeSystem}</code> in your format string directly.</p>
+          </div>
+
+          <!-- Free Sources + About -->
+          <div class="config-card"><h3>Free Sources</h3><p class="setting-desc"><strong>TVmaze</strong> — TV show data, no API key needed. Automatically included in search results.<br><strong>OpenLibrary</strong> — Audiobook/book data, no API key needed.<br><strong>Internet Archive</strong> — ROM name lookup, no API key needed. Available in the ROMs match menu.</p></div>
           <div class="config-card"><h3>About</h3><p class="setting-desc"><strong>Renamr v1.1.0</strong> — Free, open-source media file organizer.</p></div>
+
         </div>
       </div>
 
@@ -461,7 +497,7 @@
 
   <div id="modal-overlay" class="modal-overlay hidden" onclick="closeModal(event)">
     <div class="modal" onclick="event.stopPropagation()">
-      <div class="modal-header"><h3 id="modal-title">Search</h3><button class="modal-close" onclick="hideModal()">&times;</button></div>
+      <div class="modal-header"><h3 id="modal-title">Search</h3><div style="display:flex;align-items:center;gap:8px;"><button id="modal-stop-btn" class="btn" style="display:none;background:var(--danger,#e05c5c);border-color:var(--danger,#e05c5c);color:#fff;font-size:12px;padding:3px 10px;height:auto;" onclick="Organize.stopMatching();hideModal()">Stop Searching</button><button class="modal-close" onclick="hideModal()">&times;</button></div></div>
       <div class="modal-body" id="modal-body"></div>
     </div>
   </div>

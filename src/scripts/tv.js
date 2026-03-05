@@ -261,7 +261,7 @@ const TV = {
   async updateNewName(file) {
     if (!file.match) return;
     const format = await api.getStore('defaultTvFormat') || FormatEngine.defaults.tv;
-    const outputDir = await api.getStore('outputDirectory');
+    const outputDir = await api.getStore('tvOutputDirectory') || await api.getStore('outputDirectory');
     const data = {
       series: file.match.title,
       season: String(file.episodeMatch?.season || file.parsed?.season || 1),

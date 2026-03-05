@@ -509,7 +509,7 @@ const Roms = {
     };
     const { key: fmtKey, def: fmtDefault } = formatKeyMap[file.contentType] || formatKeyMap.game;
     const format        = await api.getStore(fmtKey) || fmtDefault;
-    const outputDir     = await api.getStore('outputDirectory');
+    const outputDir     = await api.getStore('romOutputDirectory') || await api.getStore('outputDirectory');
     const articleFolder = await api.getStore('romArticleFolder');
     const articleFile   = await api.getStore('romArticleFile');
     const useEsDe       = await api.getStore('romEsDeNames');
