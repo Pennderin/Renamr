@@ -24,6 +24,7 @@ const ROM_PLATFORM_MAP = {
   gcz:   { name: 'Nintendo GameCube',                      short: 'GC',     igdbId: 21  },
   xci:   { name: 'Nintendo Switch',                        short: 'Switch', igdbId: 130 },
   nsp:   { name: 'Nintendo Switch',                        short: 'Switch', igdbId: 130 },
+  nsz:   { name: 'Nintendo Switch',                        short: 'Switch', igdbId: 130 },
   // Sony
   psx:   { name: 'PlayStation',                            short: 'PS1',    igdbId: 7   },
   pbp:   { name: 'PlayStation',                            short: 'PS1',    igdbId: 7   },
@@ -205,8 +206,8 @@ const Roms = {
   // ── File ingestion ──────────────────────────────────────────────
   async addFiles() {
     const paths = await api.openFiles([{
-      name: 'ROM Files',
-      extensions: Object.keys(ROM_PLATFORM_MAP)
+      name: 'All Media & ROM Files',
+      extensions: [...['mkv','mp4','avi','mov','wmv','flv','m4v','webm','ts','mpg','mpeg','mp3','m4a','m4b','flac','ogg','wma','aac','opus','wav'], ...Object.keys(ROM_PLATFORM_MAP)]
     }, {
       name: 'All Files',
       extensions: ['*']

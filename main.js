@@ -90,7 +90,7 @@ ipcMain.handle('files:isDirectory', async (_, filePath) => {
 // ── File Scanner ─────────────────────────────────────────────────
 ipcMain.handle('files:scan', async (_, dirPath, mediaType) => {
   const ROM_EXTS = ['nes','snes','n64','z64','v64','gba','gbc','gb','nds','3ds',
-    'iso','cso','chd','rvz','gcz','wbfs','wad','cia','xci','nsp','pce',
+    'iso','cso','chd','rvz','gcz','wbfs','wad','cia','xci','nsp','nsz','pce',
     'md','smd','gen','gg','32x','sfc','smc','fig','bs','st',
     'a26','a52','a78','lnx','ngp','ngc','ws','wsc','psx','pbp',
     'cdi','nrg','img','bin','cue'];
@@ -950,23 +950,30 @@ ipcMain.handle('files:rename', async (_, operations) => {
       console.log('Moving file:', path.basename(currentOld), '→', path.basename(newPath),
         path.dirname(currentOld) === targetDir ? '(same dir)' : '(different dir)');
 
-      try {
-        await fs.promises.rename(currentOld, newPath);
-      } catch (renameErr) {
-        if (renameErr.code === 'EXDEV') {
-          console.log('Cross-device move, copying:', path.basename(currentOld));
-          const srcStat = await fs.promises.stat(currentOld);
-          await fs.promises.copyFile(currentOld, newPath);
-          const dstStat = await fs.promises.stat(newPath);
-          if (dstStat.size === srcStat.size) {
-            await fs.promises.unlink(currentOld);
+      const maxRetries = 3;
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          await fs.promises.rename(currentOld, newPath);
+          break;
+        } catch (renameErr) {
+          if (renameErr.code === 'EXDEV') {
+            console.log('Cross-device move, copying:', path.basename(currentOld));
+            const srcStat = await fs.promises.stat(currentOld);
+            await fs.promises.copyFile(currentOld, newPath);
+            const dstStat = await fs.promises.stat(newPath);
+            if (dstStat.size === srcStat.size) {
+              await fs.promises.unlink(currentOld);
+            } else {
+              try { await fs.promises.unlink(newPath); } catch (e) { /* ignore */ }
+              throw new Error(`Copy verification failed: src=${srcStat.size} dst=${dstStat.size}`);
+            }
+            break;
+          } else if (renameErr.code === 'EBUSY' && attempt < maxRetries) {
+            console.warn(`File busy, retrying (${attempt}/${maxRetries - 1}):`, path.basename(currentOld));
+            await new Promise(r => setTimeout(r, 1000 * attempt));
           } else {
-            // Cleanup failed copy and throw
-            try { await fs.promises.unlink(newPath); } catch (e) { /* ignore */ }
-            throw new Error(`Copy verification failed: src=${srcStat.size} dst=${dstStat.size}`);
+            throw renameErr;
           }
-        } else {
-          throw renameErr;
         }
       }
       results.push({ source: op.oldPath, target: newPath, success: true });
