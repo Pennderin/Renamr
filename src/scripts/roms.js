@@ -158,7 +158,7 @@ function parseRomFilename(filename) {
       const pt = p.trim();
       if (/^(Update|Patch)$/i.test(pt)) { contentType = 'update'; break; }
       if (/^(DLC)$/i.test(pt)) { contentType = 'dlc'; break; }
-      if (/^v\d+(\.\d+)+$/i.test(pt) && !version) {
+      if (/^v\d+(\.\d+)*$/i.test(pt) && !version) {
         version = pt;
         contentType = 'update';
         break;
