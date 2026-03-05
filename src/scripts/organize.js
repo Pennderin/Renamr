@@ -79,23 +79,41 @@ const Organize = {
     this.updateUI();
   },
 
+  // ── Match cancellation ───────────────────────────────────────
+  _cancelMatch: false,
+
+  _setMatching(active) {
+    const matchBtn = document.getElementById('organize-match-btn');
+    const stopBtn  = document.getElementById('organize-stop-btn');
+    if (matchBtn) matchBtn.style.display = active ? 'none' : '';
+    if (stopBtn)  stopBtn.style.display  = active ? ''     : 'none';
+  },
+
+  stopMatching() {
+    this._cancelMatch = true;
+  },
+
   // ── Match all loaded types ───────────────────────────────────
   async matchAll(source) {
-    const promises = [];
-    if (Movies.files.length > 0) promises.push(Movies.matchAll(source === 'all' ? 'all' : undefined));
-    if (TV.files.length > 0) promises.push(TV.matchAll(source === 'all' ? 'all' : undefined));
-    if (Audiobooks.files.length > 0) promises.push(Audiobooks.matchAll(source === 'all' ? 'all' : undefined));
-    if (Roms.files.length > 0) promises.push(Roms.matchAll());
-    await Promise.all(promises);
+    this._cancelMatch = false;
+    this._setMatching(true);
+    if (Movies.files.length > 0) await Movies.matchAll(source === 'all' ? 'all' : undefined);
+    if (!this._cancelMatch && TV.files.length > 0) await TV.matchAll(source === 'all' ? 'all' : undefined);
+    if (!this._cancelMatch && Audiobooks.files.length > 0) await Audiobooks.matchAll(source === 'all' ? 'all' : undefined);
+    if (!this._cancelMatch && Roms.files.length > 0) await Roms.matchAll();
+    this._setMatching(false);
     this.updateUI();
   },
 
   // ── Match a specific type with source ────────────────────────
   async matchType(type, source) {
+    this._cancelMatch = false;
+    this._setMatching(true);
     if (type === 'movies' && Movies.files.length > 0) await Movies.matchAll(source);
-    if (type === 'tv' && TV.files.length > 0) await TV.matchAll(source);
-    if (type === 'audiobooks' && Audiobooks.files.length > 0) await Audiobooks.matchAll(source);
-    if (type === 'roms' && Roms.files.length > 0) await Roms.matchAll(source);
+    if (!this._cancelMatch && type === 'tv' && TV.files.length > 0) await TV.matchAll(source);
+    if (!this._cancelMatch && type === 'audiobooks' && Audiobooks.files.length > 0) await Audiobooks.matchAll(source);
+    if (!this._cancelMatch && type === 'roms' && Roms.files.length > 0) await Roms.matchAll(source);
+    this._setMatching(false);
     this.updateUI();
   },
 

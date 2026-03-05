@@ -339,6 +339,7 @@ const Audiobooks = {
   // ── Match / Lookup ──────────────────────────────────────────────
   async matchAll(source) {
     for (const book of this.books) {
+      if (Organize._cancelMatch) break;
       if (book.matched) continue;
       await this._matchBook(book, source);
     }

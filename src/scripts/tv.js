@@ -142,6 +142,7 @@ const TV = {
     }
 
     for (const [seriesName, groupFiles] of Object.entries(groups)) {
+      if (Organize._cancelMatch) break;
       // Search sources based on selection
       let results = [];
       const src = this._matchSource;

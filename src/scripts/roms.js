@@ -293,6 +293,7 @@ const Roms = {
       }
     }
     for (const file of this.files) {
+      if (Organize._cancelMatch) break;
       if (file.match) continue;
       await this._matchFile(file, source);
     }

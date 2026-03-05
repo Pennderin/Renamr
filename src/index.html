@@ -89,9 +89,13 @@
               <span class="panel-label organize-action-label">Original Files</span>
               <div class="organize-action-center">
                 <div class="match-btn-wrapper">
-                  <button class="center-action-btn" onclick="Organize.matchAll()" oncontextmenu="Organize.showMatchMenu(event)" title="Left-click: Match all&#10;Right-click: Choose source">
+                  <button id="organize-match-btn" class="center-action-btn" onclick="Organize.matchAll()" oncontextmenu="Organize.showMatchMenu(event)" title="Left-click: Match all&#10;Right-click: Choose source">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                     <span>Match</span>
+                  </button>
+                  <button id="organize-stop-btn" class="center-action-btn" onclick="Organize.stopMatching()" title="Stop matching" style="display:none;background:var(--danger,#e05c5c);border-color:var(--danger,#e05c5c);">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+                    <span>Stop</span>
                   </button>
                   <div class="source-menu hidden" id="organize-source-menu">
                     <div class="source-menu-group" id="org-match-movies-group" style="display:none">
