@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('api', {
 
   // File operations
   isDirectory: (path) => ipcRenderer.invoke('files:isDirectory', path),
+  peekZip: (path) => ipcRenderer.invoke('files:peekZip', path),
   scanFiles: (dir, type) => ipcRenderer.invoke('files:scan', dir, type),
   readAudioMeta: (path) => ipcRenderer.invoke('files:readAudioMeta', path),
   parseFilename: (filename) => ipcRenderer.invoke('files:parseFilename', filename),
@@ -44,6 +45,13 @@ contextBridge.exposeInMainWorld('api', {
   embedTags: (filePath, metadata, coverPath) => ipcRenderer.invoke('books:embedTags', filePath, metadata, coverPath),
   downloadCover: (url) => ipcRenderer.invoke('books:downloadCover', url),
   cleanupCover: (coverPath) => ipcRenderer.invoke('books:cleanupCover', coverPath),
+
+  // IGDB (Games / ROMs)
+  igdbSearch: (query, platformId) => ipcRenderer.invoke('igdb:search', query, platformId),
+  igdbTestCredentials: (clientId, clientSecret) => ipcRenderer.invoke('igdb:testCredentials', clientId, clientSecret),
+
+  // Internet Archive (free ROM search, no API key)
+  iaSearch: (query, platformShort) => ipcRenderer.invoke('ia:search', query, platformShort),
 
   // Settings store
   getStore: (key) => ipcRenderer.invoke('store:get', key),

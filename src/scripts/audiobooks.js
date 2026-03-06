@@ -339,6 +339,7 @@ const Audiobooks = {
   // ── Match / Lookup ──────────────────────────────────────────────
   async matchAll(source) {
     for (const book of this.books) {
+      if (Organize._cancelMatch) break;
       if (book.matched) continue;
       await this._matchBook(book, source);
     }
@@ -549,7 +550,7 @@ const Audiobooks = {
     const format = await api.getStore('defaultAudiobookFormat') || FormatEngine.defaults.audiobook;
     const articleFolder = await api.getStore('audiobookArticleFolder');
     const articleFile = await api.getStore('audiobookArticleFile');
-    const outputDir = await api.getStore('outputDirectory');
+    const outputDir = await api.getStore('audiobookOutputDirectory') || await api.getStore('outputDirectory');
 
     // Compute the library root: this is the directory ABOVE the format's folder structure.
     // We find it by aligning the format output against the existing path.
@@ -599,7 +600,7 @@ const Audiobooks = {
   //   Alignment finds "Martha Wells" at position 4 → library root = //server/Plex/AudioBook
   //
   async _getBaseDir(book) {
-    const outputDir = await api.getStore('outputDirectory');
+    const outputDir = await api.getStore('audiobookOutputDirectory') || await api.getStore('outputDirectory');
     if (outputDir) return outputDir;
 
     const format = await api.getStore('defaultAudiobookFormat') || FormatEngine.defaults.audiobook;
@@ -923,6 +924,14 @@ const Audiobooks = {
     if (buttonsEl) buttonsEl.innerHTML = '<button class="btn btn-primary" onclick="hideModal()">Done</button>';
   },
 
+  removeBook(bookIndex) {
+    const book = this.books[bookIndex];
+    if (!book) return;
+    this.files = this.files.filter(f => !book.files.includes(f));
+    this.books.splice(bookIndex, 1);
+    this.render();
+  },
+
   // ── Clear / Refresh ─────────────────────────────────────────────
   clear() { this.files = []; this.books = []; this.render(); },
 
@@ -970,7 +979,7 @@ const Audiobooks = {
 
     // Render book-grouped view
     let leftHtml = '';
-    let arrowHtml = '';
+    let arrowHtml = '<div class="arrow-spacer">&nbsp;</div>';
     let rightHtml = '';
 
     for (let bi = 0; bi < this.books.length; bi++) {
@@ -978,7 +987,7 @@ const Audiobooks = {
 
       // Book header row (left side)
       leftHtml += `
-        <div class="file-row book-header">
+        <div class="file-row book-header" oncontextmenu="Organize.showRowMenu('audiobooks',${bi},event)">
           ${book.coverUrl ? `<img src="${book.coverUrl}" class="book-cover-thumb" />` : '<div class="book-cover-thumb book-cover-placeholder">📚</div>'}
           <div class="file-row-nameblock">
             <span class="file-row-name book-title-row">${escapeHtml(book.title || 'Unknown Book')}</span>
@@ -996,7 +1005,7 @@ const Audiobooks = {
 
       // Book header arrow
       const bookArrowCls = book.matched ? (book.files.every(f => f.status === 'done') ? 'done' : 'active') : '';
-      arrowHtml += `<div class="center-arrow-row ${bookArrowCls}" style="font-weight:bold;">→</div>`;
+      arrowHtml += `<div class="center-arrow-row ${bookArrowCls}" style="font-weight:bold;height:44px;">→</div>`;
 
       // Book header (right side) — show target folder structure
       if (book.matched && book.files[0]?.newName) {

@@ -1,6 +1,6 @@
 {
   "name": "renamr",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Free media file organizer — TV, Movies & Audiobooks",
   "main": "main.js",
   "scripts": {
@@ -28,7 +28,9 @@
     ],
     "win": {
       "icon": "assets/icon.ico",
-      "target": ["nsis"]
+      "target": [
+        "nsis"
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -40,22 +42,27 @@
     },
     "mac": {
       "icon": "assets/icon.png",
-      "target": ["dmg"]
+      "target": [
+        "dmg"
+      ]
     },
     "linux": {
       "icon": "assets/icon.png",
-      "target": ["AppImage"]
+      "target": [
+        "AppImage"
+      ]
     }
   },
   "dependencies": {
+    "adm-zip": "^0.5.16",
     "axios": "^1.7.2",
-    "electron-store": "^8.2.0",
     "chokidar": "^3.6.0",
-    "music-metadata": "^7.14.0",
-    "mime-types": "^2.1.35",
+    "electron-store": "^8.2.0",
     "fast-glob": "^3.3.2",
+    "ffmpeg-static": "^5.2.0",
     "ffprobe-static": "^3.1.0",
-    "ffmpeg-static": "^5.2.0"
+    "mime-types": "^2.1.35",
+    "music-metadata": "^7.14.0"
   },
   "devDependencies": {
     "electron": "^31.0.0",

@@ -5,6 +5,7 @@ const os = require('os');
 const { execFile } = require('child_process');
 const fastGlob = require('fast-glob');
 const axios = require('axios');
+const AdmZip = require('adm-zip');
 const Store = require('electron-store');
 
 const store = new Store({
@@ -16,9 +17,23 @@ const store = new Store({
     defaultMovieFormat: '{title} ({year})/{title} ({year})',
     defaultTvFormat: '{series}/Season {season}/{series} - S{season}E{episode} - {title}',
     defaultAudiobookFormat: '{author}/{title}/{title} - Chapter {track}',
+    defaultRomFormat: '{platform}/{title} ({year})',
+    defaultRomDlcFormat: '{platform}/DLC/{title}',
+    defaultRomUpdateFormat: '{platform}/Update/{title} ({version})',
     outputDirectory: '',
+    movieOutputDirectory: '',
+    tvOutputDirectory: '',
+    audiobookOutputDirectory: '',
+    romOutputDirectory: '',
     theme: 'dark',
-    history: []
+    history: [],
+    igdbClientId: '',
+    igdbClientSecret: '',
+    igdbAccessToken: '',
+    igdbTokenExpiry: 0,
+    romEsDeNames: false,
+    romArticleFolder: false,
+    romArticleFile: false
   }
 });
 
@@ -70,6 +85,20 @@ ipcMain.handle('dialog:openFiles', async (_, filters) => {
   return result.canceled ? [] : result.filePaths;
 });
 
+// ── ZIP peek (read inner filenames without extracting) ───────────
+ipcMain.handle('files:peekZip', async (_, filePath) => {
+  try {
+    const zip = new AdmZip(filePath);
+    const entries = zip.getEntries();
+    // Return all inner entry names that aren't directories
+    return entries
+      .filter(e => !e.isDirectory)
+      .map(e => e.entryName.replace(/\\/g, '/').split('/').pop());
+  } catch {
+    return [];
+  }
+});
+
 // ── Path helpers ─────────────────────────────────────────────────
 ipcMain.handle('files:isDirectory', async (_, filePath) => {
   try {
@@ -82,10 +111,16 @@ ipcMain.handle('files:isDirectory', async (_, filePath) => {
 
 // ── File Scanner ─────────────────────────────────────────────────
 ipcMain.handle('files:scan', async (_, dirPath, mediaType) => {
+  const ROM_EXTS = ['nes','snes','n64','z64','v64','gba','gbc','gb','nds','3ds',
+    'iso','cso','chd','rvz','gcz','wbfs','wad','cia','cci','xci','nsp','nsz','pce',
+    'md','smd','gen','gg','32x','sfc','smc','fig','bs','st',
+    'a26','a52','a78','lnx','ngp','ngc','ws','wsc','psx','pbp',
+    'cdi','nrg','img','bin','cue','zip'];
   const extensions = {
     video: ['mkv','mp4','avi','mov','wmv','flv','m4v','webm','ts'],
     audio: ['mp3','m4a','m4b','flac','ogg','wma','aac','opus','wav'],
-    all: ['mkv','mp4','avi','mov','wmv','flv','m4v','webm','ts','mp3','m4a','m4b','flac','ogg','wma','aac','opus','wav']
+    roms: ROM_EXTS,
+    all: ['mkv','mp4','avi','mov','wmv','flv','m4v','webm','ts','mp3','m4a','m4b','flac','ogg','wma','aac','opus','wav', ...ROM_EXTS]
   };
 
   const exts = extensions[mediaType] || extensions.all;
@@ -356,6 +391,144 @@ ipcMain.handle('omdb:details', async (_, imdbId, apiKey) => {
   }
 });
 
+// ── IGDB (Games / ROMs) ─────────────────────────────────────────
+async function _getIgdbToken() {
+  const clientId     = store.get('igdbClientId');
+  const clientSecret = store.get('igdbClientSecret');
+  if (!clientId || !clientSecret) throw new Error('No IGDB credentials configured');
+
+  const cachedToken  = store.get('igdbAccessToken');
+  const cachedExpiry = store.get('igdbTokenExpiry', 0);
+  if (cachedToken && cachedExpiry > Date.now() + 60000) return cachedToken;
+
+  const res = await axios.post('https://id.twitch.tv/oauth2/token', null, {
+    params: { client_id: clientId, client_secret: clientSecret, grant_type: 'client_credentials' }
+  });
+  const token  = res.data.access_token;
+  const expiry = Date.now() + (res.data.expires_in * 1000);
+  store.set('igdbAccessToken', token);
+  store.set('igdbTokenExpiry', expiry);
+  return token;
+}
+
+// IGDB rate limiter — max 4 req/sec; enforce 275ms minimum gap
+let _igdbLastCall = 0;
+async function _igdbThrottle() {
+  const now = Date.now();
+  const gap = now - _igdbLastCall;
+  if (gap < 275) await new Promise(r => setTimeout(r, 275 - gap));
+  _igdbLastCall = Date.now();
+}
+
+ipcMain.handle('igdb:search', async (_, query, platformId) => {
+  try {
+    await _igdbThrottle();
+    const clientId = store.get('igdbClientId');
+    const token    = await _getIgdbToken();
+
+    let body = `search "${query.replace(/"/g, '')}";\n`;
+    body    += `fields name,first_release_date,category,platforms.name,platforms.abbreviation,genres.name,involved_companies.company.name,involved_companies.developer,cover.url;\n`;
+    body    += `limit 10;\n`;
+    if (platformId) body += `where platforms = (${platformId});\n`;
+
+    let res;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        res = await axios.post('https://api.igdb.com/v4/games', body, {
+          headers: {
+            'Client-ID': clientId,
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'text/plain'
+          },
+          timeout: 10000
+        });
+        break;
+      } catch (reqErr) {
+        if (reqErr.response?.status === 429 && attempt < 3) {
+          console.warn(`IGDB 429 rate limit, retrying in ${attempt}s...`);
+          await new Promise(r => setTimeout(r, 1000 * attempt));
+        } else {
+          throw reqErr;
+        }
+      }
+    }
+
+    const items = Array.isArray(res.data) ? res.data : [];
+    return items.map(item => {
+      const releaseYear  = item.first_release_date
+        ? new Date(item.first_release_date * 1000).getFullYear().toString()
+        : '';
+      const platforms    = item.platforms || [];
+      const firstPlat    = platforms[0] || {};
+      const genre        = ((item.genres || [])[0] || {}).name || '';
+      const developers   = (item.involved_companies || [])
+        .filter(ic => ic.developer)
+        .map(ic => ic.company?.name)
+        .filter(Boolean);
+      const coverUrl     = item.cover?.url
+        ? 'https:' + item.cover.url.replace('t_thumb', 't_cover_big')
+        : null;
+      return {
+        id:             item.id,
+        title:          item.name || '',
+        year:           releaseYear,
+        platform:       firstPlat.name || '',
+        platformAbbrev: firstPlat.abbreviation || '',
+        platforms:      platforms.map(p => ({ id: p.id, name: p.name, abbrev: p.abbreviation })),
+        genre,
+        developer:      developers[0] || '',
+        coverUrl,
+        category:       item.category || 0,
+        source:         'IGDB'
+      };
+    });
+  } catch (err) {
+    console.error('IGDB search error:', err.message);
+    return { error: err.message };
+  }
+});
+
+ipcMain.handle('igdb:testCredentials', async (_, clientId, clientSecret) => {
+  try {
+    const res = await axios.post('https://id.twitch.tv/oauth2/token', null, {
+      params: { client_id: clientId, client_secret: clientSecret, grant_type: 'client_credentials' }
+    });
+    const token  = res.data.access_token;
+    const expiry = Date.now() + (res.data.expires_in * 1000);
+    store.set('igdbClientId',     clientId);
+    store.set('igdbClientSecret', clientSecret);
+    store.set('igdbAccessToken',  token);
+    store.set('igdbTokenExpiry',  expiry);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// ── Internet Archive (free ROM search, no API key) ───────────────
+ipcMain.handle('ia:search', async (_, query, platformShort) => {
+  try {
+    const encodedQuery = encodeURIComponent(`title:"${query}" AND mediatype:software`);
+    const url = `https://archive.org/advancedsearch.php?q=${encodedQuery}&fl=identifier,title,year,subject,creator&rows=15&output=json`;
+    const res = await axios.get(url, { timeout: 12000 });
+    const docs = res.data?.response?.docs || [];
+    return docs.map(doc => ({
+      id:             doc.identifier || '',
+      title:          doc.title      || '',
+      year:           doc.year       ? String(doc.year) : '',
+      platform:       Array.isArray(doc.subject) ? doc.subject[0] : (doc.subject || ''),
+      platformAbbrev: platformShort  || '',
+      genre:          '',
+      developer:      Array.isArray(doc.creator) ? doc.creator[0] : (doc.creator || ''),
+      coverUrl:       null,
+      source:         'IA'
+    }));
+  } catch (err) {
+    console.error('IA search error:', err.message);
+    return { error: err.message };
+  }
+});
+
 // ── Video File Probe (via bundled ffprobe) ───────────────────────
 ipcMain.handle('files:probeVideo', async (_, filePath) => {
   try {
@@ -577,7 +750,6 @@ ipcMain.handle('books:google', async (_, query) => {
     if (!res.data.items) return [];
     return res.data.items.slice(0, 10).map(item => {
       const v = item.volumeInfo || {};
-      const fullTitle = [v.title, v.subtitle].filter(Boolean).join(': ');
 
       // Extract series info from title, subtitle, and description
       const { series, seriesNum } = extractSeriesFromGoogleBook(v);
@@ -822,23 +994,30 @@ ipcMain.handle('files:rename', async (_, operations) => {
       console.log('Moving file:', path.basename(currentOld), '→', path.basename(newPath),
         path.dirname(currentOld) === targetDir ? '(same dir)' : '(different dir)');
 
-      try {
-        await fs.promises.rename(currentOld, newPath);
-      } catch (renameErr) {
-        if (renameErr.code === 'EXDEV') {
-          console.log('Cross-device move, copying:', path.basename(currentOld));
-          const srcStat = await fs.promises.stat(currentOld);
-          await fs.promises.copyFile(currentOld, newPath);
-          const dstStat = await fs.promises.stat(newPath);
-          if (dstStat.size === srcStat.size) {
-            await fs.promises.unlink(currentOld);
+      const maxRetries = 3;
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          await fs.promises.rename(currentOld, newPath);
+          break;
+        } catch (renameErr) {
+          if (renameErr.code === 'EXDEV') {
+            console.log('Cross-device move, copying:', path.basename(currentOld));
+            const srcStat = await fs.promises.stat(currentOld);
+            await fs.promises.copyFile(currentOld, newPath);
+            const dstStat = await fs.promises.stat(newPath);
+            if (dstStat.size === srcStat.size) {
+              await fs.promises.unlink(currentOld);
+            } else {
+              try { await fs.promises.unlink(newPath); } catch (e) { /* ignore */ }
+              throw new Error(`Copy verification failed: src=${srcStat.size} dst=${dstStat.size}`);
+            }
+            break;
+          } else if (renameErr.code === 'EBUSY' && attempt < maxRetries) {
+            console.warn(`File busy, retrying (${attempt}/${maxRetries - 1}):`, path.basename(currentOld));
+            await new Promise(r => setTimeout(r, 1000 * attempt));
           } else {
-            // Cleanup failed copy and throw
-            try { await fs.promises.unlink(newPath); } catch (e) { /* ignore */ }
-            throw new Error(`Copy verification failed: src=${srcStat.size} dst=${dstStat.size}`);
+            throw renameErr;
           }
-        } else {
-          throw renameErr;
         }
       }
       results.push({ source: op.oldPath, target: newPath, success: true });
@@ -970,7 +1149,6 @@ function parseMediaFilename(filename) {
 }
 
 function extractMediaTags(str) {
-  const s = str.toLowerCase();
   const result = {
     resolution: '',
     source: '',

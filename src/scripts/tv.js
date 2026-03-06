@@ -142,6 +142,7 @@ const TV = {
     }
 
     for (const [seriesName, groupFiles] of Object.entries(groups)) {
+      if (Organize._cancelMatch) break;
       // Search sources based on selection
       let results = [];
       const src = this._matchSource;
@@ -260,7 +261,7 @@ const TV = {
   async updateNewName(file) {
     if (!file.match) return;
     const format = await api.getStore('defaultTvFormat') || FormatEngine.defaults.tv;
-    const outputDir = await api.getStore('outputDirectory');
+    const outputDir = await api.getStore('tvOutputDirectory') || await api.getStore('outputDirectory');
     const data = {
       series: file.match.title,
       season: String(file.episodeMatch?.season || file.parsed?.season || 1),
@@ -405,6 +406,7 @@ const TV = {
     this.render();
   },
 
+  removeFile(index) { this.files.splice(index, 1); this.render(); },
   clear() { this.files = []; this._tvDetails = {}; this.render(); },
 
   refresh() {
@@ -431,9 +433,9 @@ const TV = {
       return;
     }
 
-    document.getElementById('tv-original-list').innerHTML = this.files.map((f, i) => `<div class="file-row ${f.status === 'done' ? 'done' : ''} ${f.status === 'error' ? 'error-row' : ''}"><input type="checkbox" class="file-row-check" ${f.selected ? 'checked' : ''} onchange="TV.files[${i}].selected=this.checked" /><svg class="file-row-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="15" rx="2"/></svg><span class="file-row-name" title="${escapeHtml(f.path)}">${escapeHtml(f.name)}</span><button class="file-row-action" onclick="TV.showSearch(${i})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button></div>`).join('');
+    document.getElementById('tv-original-list').innerHTML = this.files.map((f, i) => `<div class="file-row ${f.status === 'done' ? 'done' : ''} ${f.status === 'error' ? 'error-row' : ''}" oncontextmenu="Organize.showRowMenu('tv',${i},event)"><input type="checkbox" class="file-row-check" ${f.selected ? 'checked' : ''} onchange="TV.files[${i}].selected=this.checked" /><svg class="file-row-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="15" rx="2"/></svg><span class="file-row-name" title="${escapeHtml(f.path)}">${escapeHtml(f.name)}</span><button class="file-row-action" onclick="TV.showSearch(${i})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button></div>`).join('');
 
-    document.getElementById('tv-arrows').innerHTML = this.files.map(f => `<div class="center-arrow-row ${f.status === 'done' ? 'done' : (f.match ? 'active' : '')}">→</div>`).join('');
+    document.getElementById('tv-arrows').innerHTML = '<div class="arrow-spacer">&nbsp;</div>' + this.files.map(f => `<div class="center-arrow-row ${f.status === 'done' ? 'done' : (f.match ? 'active' : '')}">→</div>`).join('');
 
     document.getElementById('tv-new-list').innerHTML = this.files.map(f => {
       let nc = 'pending', dn = 'waiting for match...', sh = '<span class="file-row-status status-pending">pending</span>';

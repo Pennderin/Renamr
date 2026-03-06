@@ -250,7 +250,8 @@ input, button { font-family: inherit; font-size: inherit; }
   padding: 6px 16px;
   gap: 8px;
   border-bottom: 1px solid rgba(255,255,255,0.03);
-  min-height: 34px;
+  height: 34px;
+  overflow: hidden;
   transition: background 0.08s;
   font-size: 12.5px;
 }
@@ -287,7 +288,7 @@ input, button { font-family: inherit; font-size: inherit; }
   text-overflow: ellipsis;
   white-space: nowrap;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 12.5px;
 }
 .file-row-newname.matched { color: var(--accent-text); font-weight: 500; }
 .file-row-newname.pending { color: var(--text-tertiary); font-style: italic; }
@@ -394,6 +395,15 @@ input, button { font-family: inherit; font-size: inherit; }
 }
 .source-menu-sep { border-top: 1px solid var(--border); margin: 2px 0; }
 
+/* ── Accordion submenus ──────────────────────────────────────── */
+.source-menu-item.has-sub { justify-content: space-between; user-select: none; }
+.source-menu-item.has-sub::after { content: '▶'; font-size: 9px; opacity: 0.45; margin-left: 8px; transition: transform 0.15s; }
+.source-menu-item.has-sub.sub-open::after { transform: rotate(90deg); }
+.source-submenu { display: none; }
+.source-menu-item.has-sub.sub-open .source-submenu { display: block; }
+.source-submenu .source-menu-item { padding-left: 24px; font-size: 11.5px; color: var(--text-secondary); }
+.source-submenu .source-menu-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+
 /* ── Type section headers (unified workspace) ────────────────── */
 .type-section { margin-bottom: 2px; }
 .type-section-header {
@@ -421,11 +431,59 @@ input, button { font-family: inherit; font-size: inherit; }
   border-bottom: 1px solid transparent;
 }
 
-/* Make the arrows container stack properly */
-#organize-arrows-container {
+/* Organize page: action bar above the three columns */
+#organize-panels {
+  flex-direction: column;
+}
+.organize-action-bar {
+  display: flex;
+  align-items: center;
+  padding: 6px 16px;
+  gap: 8px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.organize-action-label { flex: 1; }
+.organize-action-center { display: flex; gap: 6px; align-items: center; }
+.organize-action-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.organize-action-right .panel-label { margin-right: auto; }
+
+/* Three-column body below the action bar */
+.organize-panels-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Slim arrows column — no buttons, just arrows */
+.panel-arrows {
+  width: 68px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--border-subtle);
+}
+
+/* Make the arrows container fill the arrows column and scroll in sync */
+#organize-arrows-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  scrollbar-width: none; /* Firefox */
+}
+#organize-arrows-container::-webkit-scrollbar {
+  display: none; /* Chrome / Electron */
 }
 
 /* File row with tags */
@@ -453,7 +511,8 @@ input, button { font-family: inherit; font-size: inherit; }
   background: var(--bg-hover) !important;
   border-bottom: 1px solid var(--border-subtle);
   padding: 6px 8px !important;
-  min-height: 42px;
+  height: 44px !important;
+  overflow: visible !important;
 }
 .book-header .file-row-nameblock {
   gap: 2px;
@@ -489,7 +548,6 @@ input, button { font-family: inherit; font-size: inherit; }
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding-top: 4px;
   gap: 0;
   overflow: hidden;
 }
@@ -518,7 +576,8 @@ input, button { font-family: inherit; font-size: inherit; }
 .config-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
 .config-card p { color: var(--text-secondary); font-size: 12px; margin-bottom: 10px; line-height: 1.5; }
 
-.batch-config, .format-editor-grid, .settings-grid { max-width: 680px; padding: 20px 24px; overflow-y: auto; }
+.batch-config, .format-editor-grid, .settings-grid { flex: 1; min-height: 0; padding: 20px 24px; overflow-y: auto; }
+.batch-config > *, .format-editor-grid > *, .settings-grid > * { max-width: 680px; }
 
 /* Rules */
 .rule-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
