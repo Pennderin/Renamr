@@ -1,0 +1,40 @@
+name: Discord Release Notification
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to Discord
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RELEASE_NAME: ${{ github.event.release.name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_URL: ${{ github.event.release.html_url }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          BODY="${RELEASE_BODY:0:1000}"
+          
+          PAYLOAD=$(cat <<EOF
+          {
+            "embeds": [{
+              "title": "${REPO_NAME} ${RELEASE_TAG}",
+              "url": "${RELEASE_URL}",
+              "description": $(echo "$BODY" | jq -Rs .),
+              "color": 3447003,
+              "footer": {
+                "text": "GitHub Release"
+              },
+              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            }]
+          }
+          EOF
+          )
+          
+          curl -s -X POST "$WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD"
