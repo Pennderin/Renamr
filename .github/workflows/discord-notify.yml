@@ -16,15 +16,25 @@ jobs:
           RELEASE_URL: ${{ github.event.release.html_url }}
           RELEASE_BODY: ${{ github.event.release.body }}
           REPO_NAME: ${{ github.event.repository.name }}
+          REPO_DESC: ${{ github.event.repository.description }}
         run: |
-          BODY="${RELEASE_BODY:0:1000}"
+          BODY="${RELEASE_BODY:0:900}"
+          
+          # Trim repo description to first sentence or clause (before em dash or period)
+          SHORT_DESC=$(echo "$REPO_DESC" | sed 's/ — .*//' | sed 's/\. .*/\./' | head -c 120)
+          
+          if [ -n "$SHORT_DESC" ]; then
+            FULL_DESC="*${SHORT_DESC}*\n\n${BODY}"
+          else
+            FULL_DESC="${BODY}"
+          fi
           
           PAYLOAD=$(cat <<EOF
           {
             "embeds": [{
               "title": "${REPO_NAME} ${RELEASE_TAG}",
               "url": "${RELEASE_URL}",
-              "description": $(echo "$BODY" | jq -Rs .),
+              "description": $(echo -e "$FULL_DESC" | jq -Rs .),
               "color": 3447003,
               "footer": {
                 "text": "GitHub Release"
