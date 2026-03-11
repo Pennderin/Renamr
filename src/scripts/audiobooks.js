@@ -657,10 +657,11 @@ const Audiobooks = {
     if (rootIdx >= 0 && rootIdx <= pathSegs.length) {
       baseDir = pathSegs.slice(0, rootIdx).join(sep);
     } else {
-      // No match found: fall back to going up by depth
-      baseDir = pathUp(firstDir, depth);
-      const parent = pathDirname(baseDir);
-      if (!parent || parent === baseDir) baseDir = firstDir;
+      // No alignment match found. The file's directory IS the book folder,
+      // so the library root is one level up (the folder containing the book).
+      // The format engine will create the full folder structure from there.
+      baseDir = pathDirname(firstDir);
+      if (!baseDir || baseDir === firstDir) baseDir = firstDir;
     }
 
     // Sanity: baseDir shouldn't be empty for UNC paths
