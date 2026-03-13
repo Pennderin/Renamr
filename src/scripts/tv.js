@@ -141,14 +141,20 @@ const TV = {
       groups[seriesName].push(file);
     }
 
-    for (const [seriesName, groupFiles] of Object.entries(groups)) {
+    for (let [seriesName, groupFiles] of Object.entries(groups)) {
       if (Organize._cancelMatch) break;
       // Search sources based on selection
       let results = [];
       const src = this._matchSource;
 
       // Extract year from the first file's parsed data for disambiguation
-      const seriesYear = groupFiles[0]?.parsed?.seriesYear || null;
+      let seriesYear = groupFiles[0]?.parsed?.seriesYear || null;
+      // Safety: strip (year) from seriesName if parser left it in
+      const yearInName = seriesName.match(/\s*[\(\[]?((?:19|20)\d{2})[\)\]]?$/);
+      if (yearInName) {
+        if (!seriesYear) seriesYear = parseInt(yearInName[1]);
+        seriesName = seriesName.replace(/\s*[\(\[]?(?:19|20)\d{2}[\)\]]?$/, '').trim();
+      }
 
       if (src === 'tmdb' || src === 'all') {
         if (apiKey) {

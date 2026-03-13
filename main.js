@@ -918,9 +918,13 @@ ipcMain.handle('files:rename', async (_, operations) => {
 
   for (const [oldFolder, newFolderName] of sortedFolderOps) {
     try {
-      const folderDepth = oldFolder.split(path.sep).filter(Boolean).length;
-      if (folderDepth < 3) {
-        console.log('Folder rename skipped (too shallow):', oldFolder);
+      const folderParts = oldFolder.split(path.sep).filter(Boolean);
+      const folderDepth = folderParts.length;
+      // UNC paths (\\server\share\...) need higher threshold: never rename library root
+      const isUNC = oldFolder.startsWith('\\\\') || oldFolder.startsWith('//');
+      const minDepth = isUNC ? 5 : 3;
+      if (folderDepth < minDepth) {
+        console.log('Folder rename skipped (too shallow, depth', folderDepth, 'min', minDepth + '):', oldFolder);
         continue;
       }
 
@@ -983,7 +987,7 @@ ipcMain.handle('files:rename', async (_, operations) => {
 
       // Ensure target directory exists (handles missing intermediate folders)
       const targetDir = path.dirname(newPath);
-      await fs.promises.mkdir(targetDir, { recursive: true });
+      await fs.promises.mkdir(targetDir, { recursive: true, mode: 0o777 });
 
       if (fs.existsSync(newPath) && currentOld !== newPath) {
         results.push({ source: op.oldPath, target: newPath, success: false, error: 'Target file already exists' });
@@ -1066,7 +1070,7 @@ ipcMain.handle('files:undo', async (_, operations) => {
     if (!op.success) continue;
     try {
       const sourceDir = path.dirname(op.source);
-      await fs.promises.mkdir(sourceDir, { recursive: true });
+      await fs.promises.mkdir(sourceDir, { recursive: true, mode: 0o777 });
       await fs.promises.rename(op.target, op.source);
       results.push({ success: true, restored: op.source });
     } catch (err) {
@@ -1115,11 +1119,11 @@ function parseMediaFilename(filename) {
     if (match) {
       let series = match[1].trim();
       let seriesYear = null;
-      // Extract year from series name (e.g. "Scrubs 2026" → series: "Scrubs", year: 2026)
-      const yearInSeries = series.match(/[\s._-]+((?:19|20)\d{2})$/);
+      // Extract year from series name: bare "Scrubs 2026" or parenthesized "Ted Lasso (2020)"
+      const yearInSeries = series.match(/[\s._-]+[\(\[]?((?:19|20)\d{2})[\)\]]?$/);
       if (yearInSeries) {
         seriesYear = parseInt(yearInSeries[1]);
-        series = series.replace(/[\s._-]+(?:19|20)\d{2}$/, '').trim();
+        series = series.replace(/[\s._-]+[\(\[]?(?:19|20)\d{2}[\)\]]?$/, '').trim();
       }
       return {
         type: 'tv',
